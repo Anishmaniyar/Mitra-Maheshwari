@@ -1,51 +1,26 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { useAuth } from "../../hooks/useAuth";
 import { Logo } from "../common/Logo";
+import { LpIcon, LP_PATHS } from "../common/LpIcon";
+import { useTheme } from "../../hooks/useTheme";
 
 interface HeaderProps {
   variant: "public" | "app";
 }
 
-export function Header({ variant }: HeaderProps) {
-  const { user, logout } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
+const PUBLIC_LINKS = [
+  { to: "/about", label: "About" },
+  { to: "/community", label: "Community" },
+  { to: "/programs", label: "Programs" },
+  { to: "/contact", label: "Contact" },
+] as const;
 
-  if (variant === "app") {
-    return (
-      <header className="site-header">
-        <div className="container site-header__inner">
-          <Link to="/dashboard" aria-label="Dashboard home" className="header-logo-link">
-            <Logo className="logo--hide-text-sm" />
-          </Link>
-          <nav className="site-nav" aria-label="Main">
-            <NavLink to="/dashboard" end className="nav-link">
-              Dashboard
-            </NavLink>
-            <NavLink to="/family" className="nav-link">
-              Family
-            </NavLink>
-            <NavLink to="/payments" className="nav-link">
-              Payments
-            </NavLink>
-          </nav>
-          <div className="site-header__user">
-            {user && (
-              <span className="site-header__user-chip">
-                <span className="avatar" aria-hidden="true">
-                  {user.firstName.charAt(0).toUpperCase()}
-                </span>
-                <span className="site-header__greeting">{user.firstName}</span>
-              </span>
-            )}
-            <button type="button" className="btn btn--ghost btn--sm" onClick={logout}>
-              Log out
-            </button>
-          </div>
-        </div>
-      </header>
-    );
-  }
+export function Header({ variant }: HeaderProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { theme, toggle } = useTheme();
+
+  // Authenticated pages use MemberShell (sidebar) instead of this header.
+  if (variant === "app") return null;
 
   return (
     <header className="site-header">
@@ -54,12 +29,27 @@ export function Header({ variant }: HeaderProps) {
           <Logo />
         </Link>
         <nav className="site-nav" aria-label="Primary">
-          <a href="#about" className="nav-link">About</a>
-          <a href="#programs" className="nav-link">Programs</a>
-          <a href="#contact" className="nav-link">Contact</a>
+          {PUBLIC_LINKS.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={({ isActive }) => `nav-link${isActive ? " is-active" : ""}`}
+            >
+              {link.label}
+            </NavLink>
+          ))}
         </nav>
         <div className="site-nav__actions">
-          <Link to="/register" className="btn btn--ghost btn--sm hide-sm">
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={toggle}
+            aria-pressed={theme === "dark"}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            <LpIcon d={theme === "dark" ? LP_PATHS.sun : LP_PATHS.moon} />
+          </button>
+          <Link to="/login" className="btn btn--ghost btn--sm hide-sm">
             Member Login
           </Link>
           <Link to="/register" className="btn btn--primary btn--sm">
@@ -78,11 +68,29 @@ export function Header({ variant }: HeaderProps) {
         </div>
       </div>
       <div className={`container mobile-nav ${menuOpen ? "is-open" : ""}`} id="mobile-nav">
-        <a href="#about" className="nav-link" onClick={() => setMenuOpen(false)}>About</a>
-        <a href="#programs" className="nav-link" onClick={() => setMenuOpen(false)}>Programs</a>
-        <a href="#contact" className="nav-link" onClick={() => setMenuOpen(false)}>Contact</a>
-        <Link to="/register" className="btn btn--secondary" onClick={() => setMenuOpen(false)}>
+        {PUBLIC_LINKS.map((link) => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            className={({ isActive }) => `nav-link${isActive ? " is-active" : ""}`}
+            onClick={() => setMenuOpen(false)}
+          >
+            {link.label}
+          </NavLink>
+        ))}
+        <Link to="/login" className="btn btn--secondary" onClick={() => setMenuOpen(false)}>
           Member Login
+        </Link>
+        <button
+          type="button"
+          className="btn btn--ghost"
+          onClick={toggle}
+          aria-pressed={theme === "dark"}
+        >
+          {theme === "dark" ? "Light mode" : "Dark mode"}
+        </button>
+        <Link to="/register" className="btn btn--primary" onClick={() => setMenuOpen(false)}>
+          Join the Community
         </Link>
       </div>
     </header>

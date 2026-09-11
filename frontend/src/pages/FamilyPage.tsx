@@ -4,8 +4,8 @@ import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { PageContainer } from "../components/common/PageContainer";
-import { SectionHeading } from "../components/common/SectionHeading";
 import { AppLayout } from "../components/layout/AppLayout";
+import { PageHeader } from "../components/layout/PageHeader";
 import { AddFamilyMemberForm } from "../features/family/AddFamilyMemberForm";
 import { FamilyMemberList } from "../features/family/FamilyMemberList";
 import { addFamilyMember, getFamily } from "../features/family/family.service";
@@ -56,12 +56,11 @@ export default function FamilyPage() {
   return (
     <AppLayout variant="app">
       <PageContainer>
-        <div style={{ paddingBlock: "var(--space-6)" }}>
-          <SectionHeading
-            as="h1"
-            className="page-heading"
-            title="Your Family"
-            description="Manage the members of your family."
+        <div className="app-page__wrap">
+          <PageHeader
+            eyebrow="My Family"
+            title="Manage Your Family"
+            description="Keep your family information up to date."
           />
 
           {addSuccess && <div className="notice notice--success" style={{ marginBottom: "var(--space-4)" }}>{addSuccess}</div>}

@@ -2,10 +2,10 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Button } from "../components/common/Button";
+import { FlowSteps } from "../components/common/FlowSteps";
 import { Input } from "../components/common/Input";
 import { Select } from "../components/common/Select";
 import { PageContainer } from "../components/common/PageContainer";
-import { SectionHeading } from "../components/common/SectionHeading";
 import { FormField } from "../components/forms/FormField";
 import { FormSection } from "../components/forms/FormSection";
 import { AppLayout } from "../components/layout/AppLayout";
@@ -49,16 +49,22 @@ export default function MemberDetailsPage() {
 
   return (
     <AppLayout variant="public">
-      <PageContainer narrow>
-        <div style={{ paddingBlock: "var(--space-7)" }}>
-          <SectionHeading
-            as="h1"
-            className="page-heading"
-            title="Review Your Details"
-            description="We found a community record matching your information. Please review the details below and correct anything that needs to be updated."
-          />
+      <div className="lp">
+        <section className="lp-hero lp-hero--page flow-hero">
+          <PageContainer narrow>
+            <span className="eyebrow">Join the Community · Step 2 of 3</span>
+            <h1 className="lp-display lp-display--page">Review your details</h1>
+            <p className="lp-lead">
+              We found a community record matching your information. Please review the details
+              below and correct anything that needs to be updated.
+            </p>
+            <FlowSteps current={2} />
+          </PageContainer>
+        </section>
 
-          <form onSubmit={handleSubmit} noValidate className="form-card">
+        <section className="flow-body">
+          <PageContainer narrow>
+            <form onSubmit={handleSubmit} noValidate className="form-card flow-card">
             <FormSection title="Basic information">
               <div className="grid-2">
                 <FormField label="First name" htmlFor="md-firstName" error={errors.firstName} required>
@@ -164,9 +170,10 @@ export default function MemberDetailsPage() {
                 Continue to Verification
               </Button>
             </div>
-          </form>
-        </div>
-      </PageContainer>
+            </form>
+          </PageContainer>
+        </section>
+      </div>
     </AppLayout>
   );
 }

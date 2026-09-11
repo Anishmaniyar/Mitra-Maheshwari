@@ -4,10 +4,10 @@ import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { PageContainer } from "../components/common/PageContainer";
-import { SectionHeading } from "../components/common/SectionHeading";
 import { StatusBadge } from "../components/common/StatusBadge";
 import type { BadgeStatus } from "../components/common/StatusBadge";
 import { AppLayout } from "../components/layout/AppLayout";
+import { PageHeader } from "../components/layout/PageHeader";
 import { PaymentHistory } from "../features/payment/PaymentHistory";
 import { createPayment, getPayments } from "../features/payment/payment.service";
 import type { MembershipStatus, Payment } from "../types/api";
@@ -71,12 +71,11 @@ export default function PaymentsPage() {
   return (
     <AppLayout variant="app">
       <PageContainer>
-        <div style={{ paddingBlock: "var(--space-6)" }}>
-          <SectionHeading
-            as="h1"
-            className="page-heading"
-            title="Membership Payments"
-            description="Manage your family's community membership payments."
+        <div className="app-page__wrap">
+          <PageHeader
+            eyebrow="Payments"
+            title="Payment History"
+            description="View your membership payments and receipts."
           />
 
           {/* Current membership */}
@@ -102,31 +101,35 @@ export default function PaymentsPage() {
             </Button>
           </div>
 
-          <SectionHeading as="h2" title="Payment history" />
-
-          {loading && <LoadingState message="Loading payments…" />}
-
-          {error && payments === null && (
-            <ErrorState
-              title="We couldn't load your payment history."
-              message={error}
-              actionLabel="Try again"
-              onAction={() => void load()}
-            />
-          )}
-
-          {payments !== null && payments.length === 0 && (
-            <EmptyState
-              title="No payment history available."
-              message="Once your family membership is paid, the payment will appear here."
-            />
-          )}
-
-          {payments !== null && payments.length > 0 && (
-            <div className="surface" style={{ overflowX: "auto" }}>
-              <PaymentHistory payments={payments} />
+          <section className="app-section" aria-labelledby="payment-history">
+            <div className="app-section__head">
+              <h2 id="payment-history">Payment history</h2>
             </div>
-          )}
+
+            {loading && <LoadingState message="Loading payments…" />}
+
+            {error && payments === null && (
+              <ErrorState
+                title="We couldn't load your payment history."
+                message={error}
+                actionLabel="Try again"
+                onAction={() => void load()}
+              />
+            )}
+
+            {payments !== null && payments.length === 0 && (
+              <EmptyState
+                title="No payment history available."
+                message="Once your family membership is paid, the payment will appear here."
+              />
+            )}
+
+            {payments !== null && payments.length > 0 && (
+              <div className="surface" style={{ overflowX: "auto" }}>
+                <PaymentHistory payments={payments} />
+              </div>
+            )}
+          </section>
         </div>
       </PageContainer>
     </AppLayout>
