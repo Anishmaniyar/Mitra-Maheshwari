@@ -10,11 +10,12 @@ interface CandidatePickerProps {
 
 export function CandidatePicker({ candidates, onSelect, onBack }: CandidatePickerProps) {
   return (
-    <div className="stack">
-      <p className="muted" style={{ fontSize: "var(--font-size-sm)" }}>
+    <div className="onb-form">
+      <p className="onb-hint">
         We couldn't match your mobile number directly. Did we find you in the community records below?
       </p>
-      <div className="stack">
+
+      <div className="onb-grid">
         {candidates.map((m) => (
           <button
             key={m.id}
@@ -32,9 +33,14 @@ export function CandidatePicker({ candidates, onSelect, onBack }: CandidatePicke
           </button>
         ))}
       </div>
-      <Button variant="secondary" onClick={onBack}>
-        Back
-      </Button>
+
+      <div className="onb-actions">
+        <div className="onb-actions__links">
+          <Button variant="secondary" onClick={onBack}>
+            Back
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

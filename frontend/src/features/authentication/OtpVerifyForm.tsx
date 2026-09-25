@@ -31,14 +31,14 @@ export function OtpVerifyForm({
 
   return (
     <form
-      className="stack"
+      className="onb-form"
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit();
       }}
       noValidate
     >
-      <p className="muted" style={{ fontSize: "var(--font-size-sm)" }}>
+      <p className="onb-hint">
         A 6-digit verification code was sent to <strong>{maskedMobile}</strong>.
       </p>
 
@@ -51,30 +51,35 @@ export function OtpVerifyForm({
 
       {error && <div className="notice notice--error">{error}</div>}
 
-      <OtpInput
-        value={otp}
-        onChange={onOtpChange}
-        invalid={Boolean(error)}
-        autoFocus
-      />
+      <div className="onb-otp">
+        <OtpInput
+          value={otp}
+          onChange={onOtpChange}
+          invalid={Boolean(error)}
+          autoFocus
+        />
+      </div>
 
-      <Button type="submit" block loading={verifying} disabled={otp.length !== 6}>
-        Verify &amp; Continue
-      </Button>
-
-      <div className="text-center stack" style={{ gap: "var(--space-2)" }}>
-        {canResend ? (
-          <button type="button" className="btn btn--ghost btn--sm" onClick={onResend} disabled={sending}>
-            Resend OTP
+      <div className="onb-actions">
+        <div className="onb-actions__links">
+          {canResend ? (
+            <button type="button" className="btn btn--ghost btn--sm" onClick={onResend} disabled={sending}>
+              Resend OTP
+            </button>
+          ) : (
+            <span className="onb-hint">
+              {sending ? "Sending code…" : `Resend code in ${resendInSeconds}s`}
+            </span>
+          )}
+          <button type="button" className="btn btn--ghost btn--sm" onClick={onChangeMobile}>
+            Change mobile number
           </button>
-        ) : (
-          <span className="muted" style={{ fontSize: "var(--font-size-sm)" }}>
-            {sending ? "Sending code…" : `Resend code in ${resendInSeconds}s`}
-          </span>
-        )}
-        <button type="button" className="btn btn--ghost btn--sm" onClick={onChangeMobile}>
-          Change mobile number
-        </button>
+        </div>
+        <div className="onb-actions__buttons">
+          <Button type="submit" loading={verifying} disabled={otp.length !== 6}>
+            Verify &amp; Continue
+          </Button>
+        </div>
       </div>
     </form>
   );

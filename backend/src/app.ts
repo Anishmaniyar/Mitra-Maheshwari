@@ -9,6 +9,7 @@ import { authRouter } from "./modules/auth/auth.routes";
 import { familyRouter } from "./modules/family/family.routes";
 import { memberRouter } from "./modules/members/member.routes";
 import { paymentRouter } from "./modules/payment/payment.routes";
+import { statsRouter } from "./modules/stats/stats.routes";
 
 export const app = express();
 
@@ -51,6 +52,7 @@ app.use("/api", memberRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/family", familyRouter);
 app.use("/api/payments", paymentRouter);
+app.use("/api/stats", statsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

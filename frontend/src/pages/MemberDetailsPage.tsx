@@ -2,13 +2,12 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Button } from "../components/common/Button";
-import { FlowSteps } from "../components/common/FlowSteps";
 import { Input } from "../components/common/Input";
 import { Select } from "../components/common/Select";
-import { PageContainer } from "../components/common/PageContainer";
 import { FormField } from "../components/forms/FormField";
 import { FormSection } from "../components/forms/FormSection";
 import { AppLayout } from "../components/layout/AppLayout";
+import { OnboardingLayout } from "../components/onboarding/OnboardingLayout";
 import { getDraft, saveDraft } from "../features/registration/draft";
 import type { ProfileFields } from "../types/api";
 import { BLOOD_GROUPS } from "../types/api";
@@ -48,25 +47,23 @@ export default function MemberDetailsPage() {
   }
 
   return (
-    <AppLayout variant="public">
-      <div className="lp">
-        <section className="lp-hero lp-hero--page flow-hero">
-          <PageContainer narrow>
-            <span className="eyebrow">Join the Community · Step 2 of 3</span>
-            <h1 className="lp-display lp-display--page">Review your details</h1>
-            <p className="lp-lead">
+    <AppLayout variant="plain">
+      <div className="lp home">
+        <OnboardingLayout
+          step={2}
+          eyebrow="Join the Community · Step 2 of 3"
+          title={<>Review your details</>}
+          lead={
+            <>
               We found a community record matching your information. Please review the details
               below and correct anything that needs to be updated.
-            </p>
-            <FlowSteps current={2} />
-          </PageContainer>
-        </section>
-
-        <section className="flow-body">
-          <PageContainer narrow>
-            <form onSubmit={handleSubmit} noValidate className="form-card flow-card">
+            </>
+          }
+          back={{ to: "/register" }}
+        >
+          <form onSubmit={handleSubmit} noValidate className="onb-form onb-form--sections">
             <FormSection title="Basic information">
-              <div className="grid-2">
+              <div className="onb-grid">
                 <FormField label="First name" htmlFor="md-firstName" error={errors.firstName} required>
                   <Input
                     id="md-firstName"
@@ -78,26 +75,26 @@ export default function MemberDetailsPage() {
                 <FormField label="Middle name" htmlFor="md-middleName">
                   <Input id="md-middleName" value={form.middleName} onChange={(e) => set("middleName", e.target.value)} />
                 </FormField>
+                <FormField label="Last name" htmlFor="md-lastName" error={errors.lastName} required>
+                  <Input
+                    id="md-lastName"
+                    value={form.lastName}
+                    invalid={Boolean(errors.lastName)}
+                    onChange={(e) => set("lastName", e.target.value)}
+                  />
+                </FormField>
+                <FormField
+                  label="Mobile number"
+                  htmlFor="md-mobile"
+                  hint={`Your mobile number (${maskMobile(registration.mobile)}) is verified during registration and cannot be changed here.`}
+                >
+                  <Input id="md-mobile" value={maskMobile(draft.mobile)} disabled />
+                </FormField>
               </div>
-              <FormField label="Last name" htmlFor="md-lastName" error={errors.lastName} required>
-                <Input
-                  id="md-lastName"
-                  value={form.lastName}
-                  invalid={Boolean(errors.lastName)}
-                  onChange={(e) => set("lastName", e.target.value)}
-                />
-              </FormField>
-              <FormField
-                label="Mobile number"
-                htmlFor="md-mobile"
-                hint={`Your mobile number (${maskMobile(registration.mobile)}) is verified during registration and cannot be changed here.`}
-              >
-                <Input id="md-mobile" value={maskMobile(draft.mobile)} disabled />
-              </FormField>
             </FormSection>
 
             <FormSection title="Personal details">
-              <div className="grid-2">
+              <div className="onb-grid">
                 <FormField label="Age" htmlFor="md-age" error={errors.age}>
                   <Input
                     id="md-age"
@@ -121,30 +118,36 @@ export default function MemberDetailsPage() {
                     ))}
                   </Select>
                 </FormField>
+                <div className="onb-span">
+                  <FormField label="Occupation" htmlFor="md-occupation">
+                    <Input
+                      id="md-occupation"
+                      value={form.occupation}
+                      onChange={(e) => set("occupation", e.target.value)}
+                      placeholder={form.occupation ? undefined : "Add if available"}
+                    />
+                  </FormField>
+                </div>
               </div>
-              <FormField label="Occupation" htmlFor="md-occupation">
-                <Input
-                  id="md-occupation"
-                  value={form.occupation}
-                  onChange={(e) => set("occupation", e.target.value)}
-                  placeholder={form.occupation ? undefined : "Add if available"}
-                />
-              </FormField>
             </FormSection>
 
             <FormSection title="Location">
-              <FormField label="Area" htmlFor="md-area">
-                <Input
-                  id="md-area"
-                  value={form.area}
-                  onChange={(e) => set("area", e.target.value)}
-                  placeholder={form.area ? undefined : "Add if available"}
-                />
-              </FormField>
+              <div className="onb-grid">
+                <div className="onb-span">
+                  <FormField label="Area" htmlFor="md-area">
+                    <Input
+                      id="md-area"
+                      value={form.area}
+                      onChange={(e) => set("area", e.target.value)}
+                      placeholder={form.area ? undefined : "Add if available"}
+                    />
+                  </FormField>
+                </div>
+              </div>
             </FormSection>
 
             <FormSection title="PAN details">
-              <div className="grid-2">
+              <div className="onb-grid">
                 <FormField label="PAN name" htmlFor="md-panName">
                   <Input
                     id="md-panName"
@@ -165,14 +168,13 @@ export default function MemberDetailsPage() {
               </div>
             </FormSection>
 
-            <div style={{ marginTop: "var(--space-6)" }}>
-              <Button type="submit" block>
-                Continue to Verification
-              </Button>
+            <div className="onb-actions">
+              <div className="onb-actions__buttons">
+                <Button type="submit">Continue to Verification</Button>
+              </div>
             </div>
-            </form>
-          </PageContainer>
-        </section>
+          </form>
+        </OnboardingLayout>
       </div>
     </AppLayout>
   );

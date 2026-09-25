@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { PageContainer } from "../components/common/PageContainer";
-import { FlowSteps } from "../components/common/FlowSteps";
 import { AppLayout } from "../components/layout/AppLayout";
+import { OnboardingLayout } from "../components/onboarding/OnboardingLayout";
 import { OtpVerifyForm } from "../features/authentication/OtpVerifyForm";
 import { resendOtp, sendOtp, updateMe, verifyOtp } from "../features/authentication/auth.service";
 import { clearDraft, getDraft, profileToPatch } from "../features/registration/draft";
@@ -88,38 +87,33 @@ export default function OtpVerificationPage() {
   }
 
   return (
-    <AppLayout variant="public">
-      <div className="lp">
-        <section className="lp-hero lp-hero--page flow-hero">
-          <PageContainer narrow>
-            <span className="eyebrow">Almost Done · Step 3 of 3</span>
-            <h1 className="lp-display lp-display--page">Verify your mobile number</h1>
-            <p className="lp-lead">
+    <AppLayout variant="plain">
+      <div className="lp home">
+        <OnboardingLayout
+          step={3}
+          eyebrow="Almost Done · Step 3 of 3"
+          title={<>Verify your mobile number</>}
+          lead={
+            <>
               We&rsquo;ve sent a 6-digit verification code to your mobile number. Enter it below
               to complete your login.
-            </p>
-            <FlowSteps current={3} />
-          </PageContainer>
-        </section>
-
-        <section className="flow-body">
-          <PageContainer narrow>
-            <div className="form-card flow-card">
-              <OtpVerifyForm
-                maskedMobile={maskMobile(registration.mobile)}
-                sending={sending}
-                verifying={verifying}
-                error={error}
-                resendInSeconds={seconds}
-                otp={otp}
-                onOtpChange={setOtp}
-                onSubmit={() => void handleVerify()}
-                onResend={() => void requestOtp(true)}
-                onChangeMobile={handleChangeMobile}
-              />
-            </div>
-          </PageContainer>
-        </section>
+            </>
+          }
+          back={{ to: "/register/details" }}
+        >
+          <OtpVerifyForm
+            maskedMobile={maskMobile(registration.mobile)}
+            sending={sending}
+            verifying={verifying}
+            error={error}
+            resendInSeconds={seconds}
+            otp={otp}
+            onOtpChange={setOtp}
+            onSubmit={() => void handleVerify()}
+            onResend={() => void requestOtp(true)}
+            onChangeMobile={handleChangeMobile}
+          />
+        </OnboardingLayout>
       </div>
     </AppLayout>
   );

@@ -10,10 +10,13 @@ export function FlowSteps({ current }: { current: 1 | 2 | 3 }) {
         const state = n < current ? "is-done" : n === current ? "is-active" : "";
         return (
           <li key={label} className={`flow-step ${state}`.trim()} aria-current={n === current ? "step" : undefined}>
-            <span className="flow-step__dot" aria-hidden="true">
-              {n < current ? <LpIcon d={LP_PATHS.check} /> : n}
+            <span className="flow-step__bar" aria-hidden="true" />
+            <span className="flow-step__label">
+              <span className="flow-step__dot" aria-hidden="true">
+                {n < current ? <LpIcon d={LP_PATHS.check} /> : n}
+              </span>
+              {label}
             </span>
-            <span className="flow-step__label">{label}</span>
           </li>
         );
       })}

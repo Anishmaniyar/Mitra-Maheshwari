@@ -107,84 +107,105 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 export function MemberShell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const initial = user ? user.firstName.charAt(0).toUpperCase() : "M";
 
   return (
     <div className="shell">
-      {/* Desktop sidebar */}
-      <aside className="side" aria-label="Member navigation">
-        <Link to="/dashboard" className="side__brand" aria-label="Mitra Maheshwari dashboard">
+      {/* Compact top header (desktop): brand, then the member controls. */}
+      <header className="shell-header">
+        <Link to="/dashboard" className="shell-header__brand" aria-label="Mitra Maheshwari dashboard">
           <Logo />
         </Link>
-        <SidebarNav />
+        <span className="shell-header__spacer" />
+        <Link to="/dashboard#updates" className="icon-btn" aria-label="Community updates">
+          <LpIcon d={LP_PATHS.bell} />
+        </Link>
         {user && (
-          <div className="side__user">
+          <Link to="/profile" className="site-header__user-chip" aria-label="Your profile">
             <span className="avatar" aria-hidden="true">
-              {user.firstName.charAt(0).toUpperCase()}
+              {initial}
             </span>
-            <span className="side__user-text">
-              <strong>
-                {user.firstName} {user.lastName}
-              </strong>
-              <span>Member</span>
+            <span className="site-header__greeting">
+              {user.firstName} {user.lastName}
             </span>
-          </div>
+          </Link>
         )}
-      </aside>
+      </header>
 
-      <div className="shell__main">
-        {/* Mobile top bar */}
-        <div className="shell-topbar">
-          <button
-            type="button"
-            className="icon-btn"
-            aria-expanded={drawerOpen}
-            aria-controls="member-drawer"
-            aria-label="Open navigation menu"
-            onClick={() => setDrawerOpen(true)}
-          >
-            <span aria-hidden="true">☰</span>
-          </button>
-          <Link to="/dashboard" aria-label="Mitra Maheshwari dashboard">
-            <Logo className="logo--hide-text-sm" />
-          </Link>
-          <span className="shell-topbar__spacer" />
-          <Link to="/dashboard#updates" className="icon-btn" aria-label="Community updates">
-            <LpIcon d={LP_PATHS.bell} />
-          </Link>
+      <div className="shell__body">
+        {/* Desktop sidebar */}
+        <aside className="side" aria-label="Member navigation">
+          <SidebarNav />
           {user && (
-            <Link to="/profile" className="site-header__user-chip" aria-label="Your profile">
+            <div className="side__user">
               <span className="avatar" aria-hidden="true">
-                {user.firstName.charAt(0).toUpperCase()}
+                {initial}
               </span>
-            </Link>
-          )}
-        </div>
-
-        {DEMO_MODE && (
-          <div className="container">
-            <div className="notice notice--info shell-demo" role="status">
-              <strong>Demo mode:</strong> You&rsquo;re viewing simulated community data — no real
-              records are changed.
+              <span className="side__user-text">
+                <strong>
+                  {user.firstName} {user.lastName}
+                </strong>
+                <span>Member</span>
+              </span>
             </div>
-          </div>
-        )}
+          )}
+        </aside>
 
-        <main className="shell__content">{children}</main>
-
-        {/* Mobile bottom navigation */}
-        <nav className="shell-bottomnav" aria-label="Primary">
-          {BOTTOM_NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) => `shell-bottomnav__item${isActive ? " is-active" : ""}`}
+        <div className="shell__main">
+          {/* Mobile top bar */}
+          <div className="shell-topbar">
+            <button
+              type="button"
+              className="icon-btn"
+              aria-expanded={drawerOpen}
+              aria-controls="member-drawer"
+              aria-label="Open navigation menu"
+              onClick={() => setDrawerOpen(true)}
             >
-              <LpIcon d={item.icon} />
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
-        </nav>
+              <span aria-hidden="true">☰</span>
+            </button>
+            <Link to="/dashboard" aria-label="Mitra Maheshwari dashboard">
+              <Logo className="logo--hide-text-sm" />
+            </Link>
+            <span className="shell-topbar__spacer" />
+            <Link to="/dashboard#updates" className="icon-btn" aria-label="Community updates">
+              <LpIcon d={LP_PATHS.bell} />
+            </Link>
+            {user && (
+              <Link to="/profile" className="site-header__user-chip" aria-label="Your profile">
+                <span className="avatar" aria-hidden="true">
+                  {initial}
+                </span>
+              </Link>
+            )}
+          </div>
+
+          {DEMO_MODE && (
+            <div className="container">
+              <div className="notice notice--info shell-demo" role="status">
+                <strong>Demo mode:</strong> You&rsquo;re viewing simulated community data — no real
+                records are changed.
+              </div>
+            </div>
+          )}
+
+          <main className="shell__content">{children}</main>
+
+          {/* Mobile bottom navigation */}
+          <nav className="shell-bottomnav" aria-label="Primary">
+            {BOTTOM_NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) => `shell-bottomnav__item${isActive ? " is-active" : ""}`}
+              >
+                <LpIcon d={item.icon} />
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
       </div>
 
       {/* Mobile drawer */}

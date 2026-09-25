@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../components/common/Button";
-import { FlowSteps } from "../components/common/FlowSteps";
 import { LoadingState } from "../components/common/LoadingState";
-import { PageContainer } from "../components/common/PageContainer";
 import { AppLayout } from "../components/layout/AppLayout";
+import { OnboardingLayout } from "../components/onboarding/OnboardingLayout";
 import { CandidatePicker } from "../features/registration/CandidatePicker";
 import { NewMemberForm } from "../features/registration/NewMemberForm";
 import { VerifyMemberForm } from "../features/registration/VerifyMemberForm";
@@ -65,80 +64,64 @@ export default function VerifyMemberPage() {
   }
 
   return (
-    <AppLayout variant="public">
-      <div className="lp">
-        <section className="lp-hero lp-hero--page flow-hero">
-          <PageContainer narrow>
-            <span className="eyebrow">{isLogin ? "Member Login" : "Join the Community"}</span>
-            <h1 className="lp-display lp-display--page">Let&rsquo;s find your community record</h1>
-            <p className="lp-lead">
-              Enter your details to check whether your community record already exists.
-            </p>
-            <FlowSteps current={1} />
-          </PageContainer>
-        </section>
+    <AppLayout variant="plain">
+      <div className="lp home">
+        <OnboardingLayout
+          step={1}
+          eyebrow={isLogin ? "Member Login" : "Join the Community"}
+          title={<>Let&rsquo;s find your community record</>}
+          lead={<>Enter your details to check whether your community record already exists.</>}
+        >
+          {step === "form" && (
+            <>
+              {error && <div className="notice notice--error">{error}</div>}
+              <VerifyMemberForm onSubmit={(input) => void handleMatch(input)} busy={false} />
+            </>
+          )}
 
-        <section className="flow-body">
-          <PageContainer narrow>
-            {step === "form" && (
-              <div className="form-card flow-card">
-                {error && (
-                  <div className="notice notice--error" style={{ marginBottom: "var(--space-4)" }}>
-                    {error}
-                  </div>
-                )}
-                <VerifyMemberForm onSubmit={(input) => void handleMatch(input)} busy={false} />
-              </div>
-            )}
+          {step === "loading" && <LoadingState message="Checking your details…" />}
 
-            {step === "loading" && <LoadingState message="Checking your details…" />}
+          {step === "candidates" && (
+            <CandidatePicker
+              candidates={candidates}
+              onSelect={startWithMember}
+              onBack={() => {
+                setCandidates([]);
+                setStep("form");
+              }}
+            />
+          )}
 
-            {step === "candidates" && (
-              <div className="form-card flow-card">
-                <CandidatePicker
-                  candidates={candidates}
-                  onSelect={startWithMember}
-                  onBack={() => {
-                    setCandidates([]);
-                    setStep("form");
-                  }}
-                />
-              </div>
-            )}
-
-            {step === "notfound" && (
-              <div className="form-card flow-card stack">
-                <div className="state" style={{ padding: 0 }}>
-                  <h3>We couldn't find a matching community record.</h3>
-                  <p>
-                    Please double-check your name and mobile number — or register your family as new
-                    if you're not in our records yet.
-                  </p>
-                </div>
-                <div className="grid-2">
+          {step === "notfound" && (
+            <div className="onb-note">
+              <h2>We couldn't find a matching community record.</h2>
+              <p>
+                Please double-check your name and mobile number — or register your family as new
+                if you're not in our records yet.
+              </p>
+              <div className="onb-actions">
+                <div className="onb-actions__links">
                   <Button variant="secondary" onClick={() => setStep("form")}>
                     Try again
                   </Button>
-                  <Button onClick={() => setStep("newMember")}>
-                    Register as a new family
-                  </Button>
+                </div>
+                <div className="onb-actions__buttons">
+                  <Button onClick={() => setStep("newMember")}>Register as a new family</Button>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {step === "newMember" && attempt && (
-              <div className="form-card flow-card">
-                <NewMemberForm
-                  initial={attempt}
-                  busy={creating}
-                  error={error}
-                  onSubmit={(input) => void handleCreateNew(input)}
-                  onCancel={() => setStep("form")}
-                />
-              </div>
-            )}
-          </PageContainer>
-        </section>
+          {step === "newMember" && attempt && (
+            <NewMemberForm
+              initial={attempt}
+              busy={creating}
+              error={error}
+              onSubmit={(input) => void handleCreateNew(input)}
+              onCancel={() => setStep("form")}
+            />
+          )}
+        </OnboardingLayout>
       </div>
     </AppLayout>
   );

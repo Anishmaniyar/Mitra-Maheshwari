@@ -4,7 +4,9 @@ import { closeDatabase } from "./config/database";
 import { logger } from "./utils/logger";
 
 const server = app.listen(env.PORT, () => {
-  logger.info(`Mitra Maheshwari API listening on http://localhost:${env.PORT} (${env.NODE_ENV})`);
+  logger.info(
+    `Mitra Maheshwari API listening on http://localhost:${env.PORT} (${env.NODE_ENV})`,
+  );
 });
 
 /**

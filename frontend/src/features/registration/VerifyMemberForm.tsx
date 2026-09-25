@@ -36,7 +36,7 @@ export function VerifyMemberForm({ onSubmit, busy }: VerifyMemberFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="stack">
+    <form onSubmit={handleSubmit} noValidate className="onb-form onb-form--narrow">
       <FormField label="First name" htmlFor="vm-firstName" error={errors.firstName} required>
         <Input
           id="vm-firstName"
@@ -77,13 +77,16 @@ export function VerifyMemberForm({ onSubmit, busy }: VerifyMemberFormProps) {
         />
       </FormField>
 
-      <Button type="submit" block loading={busy}>
-        Continue
-      </Button>
-
-      <p className="muted" style={{ fontSize: "var(--font-size-sm)" }}>
-        Your details will be used only to identify your community record and continue registration.
-      </p>
+      <div className="onb-actions">
+        <p className="onb-actions__note">
+          Your details will be used only to identify your community record and continue registration.
+        </p>
+        <div className="onb-actions__buttons">
+          <Button type="submit" loading={busy}>
+            Continue
+          </Button>
+        </div>
+      </div>
     </form>
   );
 }

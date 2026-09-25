@@ -4,6 +4,13 @@ export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] a
    Field names follow the API's camelCase convention; the backend stores the
    snake_case member fields (first_name, last_name, ...) listed in the spec. */
 
+/** Aggregate community counters from GET /api/stats (public, real data). */
+export interface CommunityStats {
+  families: number;
+  members: number;
+  bloodGroupsRecorded: number;
+}
+
 /** A community member record (imported community data). */
 export interface Member {
   id: number;

@@ -79,23 +79,6 @@ export default function DashboardPage() {
           eyebrow="Member Dashboard"
           title={user ? `Namaste, ${user.firstName}!` : "Namaste!"}
           description="Manage your family, membership and community activity from one place."
-          actions={
-            <>
-              <Link to="/dashboard#updates" className="icon-btn" aria-label="Notifications">
-                <LpIcon d={LP_PATHS.bell} />
-              </Link>
-              {user && (
-                <Link to="/profile" className="site-header__user-chip" aria-label="Your profile">
-                  <span className="avatar" aria-hidden="true">
-                    {user.firstName.charAt(0).toUpperCase()}
-                  </span>
-                  <span className="site-header__greeting">
-                    {fullName(user.firstName, user.middleName, user.lastName)}
-                  </span>
-                </Link>
-              )}
-            </>
-          }
         />
 
         {loading && <LoadingState message="Loading your dashboard…" />}
@@ -111,10 +94,12 @@ export default function DashboardPage() {
 
         {family && (
           <>
-            {/* Summary cards */}
+            {/* Summary strip — the four headline numbers, one row. */}
             <div className="app-summary">
               <article className="app-card app-summary__card">
-                <span className="app-card__icon"><LpIcon d={LP_PATHS.users} /></span>
+                <span className="app-card__icon">
+                  <LpIcon d={LP_PATHS.users} />
+                </span>
                 <h2>My Family</h2>
                 <p className="app-card__value">
                   {memberCount} {memberCount === 1 ? "Member" : "Members"}
@@ -126,7 +111,9 @@ export default function DashboardPage() {
               </article>
 
               <article className="app-card app-summary__card">
-                <span className="app-card__icon"><LpIcon d={LP_PATHS.card} /></span>
+                <span className="app-card__icon">
+                  <LpIcon d={LP_PATHS.card} />
+                </span>
                 <h2>Membership</h2>
                 <p className="app-card__value">{year}</p>
                 <p className="app-card__sub">
@@ -138,7 +125,9 @@ export default function DashboardPage() {
               </article>
 
               <article className="app-card app-summary__card">
-                <span className="app-card__icon"><LpIcon d={LP_PATHS.receipt} /></span>
+                <span className="app-card__icon">
+                  <LpIcon d={LP_PATHS.receipt} />
+                </span>
                 <h2>Payments</h2>
                 <p className="app-card__value">
                   {membership?.amount != null
@@ -154,186 +143,184 @@ export default function DashboardPage() {
               </article>
 
               <article className="app-card app-summary__card">
-                <span className="app-card__icon"><LpIcon d={LP_PATHS.user} /></span>
+                <span className="app-card__icon">
+                  <LpIcon d={LP_PATHS.user} />
+                </span>
                 <h2>Profile</h2>
                 <p className="app-card__value">{profileComplete ? "Complete" : "Incomplete"}</p>
-                <p className="app-card__sub">
-                  {user ? maskMobile(user.mobile) : "Member profile"}
-                </p>
+                <p className="app-card__sub">{user ? maskMobile(user.mobile) : "Member profile"}</p>
                 <Link to="/profile" className="app-card__link">
                   View Profile <span aria-hidden="true">→</span>
                 </Link>
               </article>
             </div>
 
-            {/* Quick actions */}
-            <section className="app-section" aria-labelledby="quick-actions">
-              <div className="app-section__head">
-                <div>
-                  <h2 id="quick-actions">Quick Actions</h2>
-                  <p>Access the things you use most.</p>
-                </div>
-              </div>
-              <div className="app-quick">
-                {QUICK_ACTIONS.map((a) => (
-                  <Link key={a.title} to={a.to} className="app-card app-quick__card">
-                    <span className="app-card__icon"><LpIcon d={LP_PATHS[a.icon]} /></span>
-                    <h3>{a.title}</h3>
-                    <p>{a.description}</p>
-                    <span className="app-card__link">
-                      Explore <span aria-hidden="true">→</span>
-                    </span>
+            {/* Primary grid — records first, shortcuts and account state beside it. */}
+            <div className="dash-grid">
+              <section className="dash-panel" aria-labelledby="my-family">
+                <div className="dash-panel__head">
+                  <h2 id="my-family">My Family</h2>
+                  <Link to="/family" className="app-card__link">
+                    View Family <span aria-hidden="true">→</span>
                   </Link>
-                ))}
-              </div>
-            </section>
-
-            {/* Two-column content */}
-            <div className="app-cols">
-              <div className="app-cols__main">
-                <section className="app-section" aria-labelledby="my-family">
-                  <div className="app-section__head">
-                    <h2 id="my-family">My Family</h2>
-                    <Link to="/family" className="app-card__link">
-                      View Family <span aria-hidden="true">→</span>
-                    </Link>
-                  </div>
-                  <div className="app-card">
-                    <p className="app-card__sub app-card__meta">
-                      Family #{family.familyId} · {memberCount}{" "}
-                      {memberCount === 1 ? "member" : "members"}
-                      {family.head
-                        ? ` · Head: ${fullName(family.head.firstName, family.head.middleName, family.head.lastName)}`
-                        : ""}
-                    </p>
-                    <ul className="app-members">
-                      {preview.map((m) => (
-                        <li key={m.id} className="app-members__row">
-                          <span className="app-avatar" aria-hidden="true">
-                            {m.firstName.charAt(0).toUpperCase()}
-                          </span>
-                          <span className="app-members__info">
-                            <strong>{fullName(m.firstName, m.middleName, m.lastName)}</strong>
-                            <span>
-                              {m.isHead
-                                ? "Family Head"
-                                : [m.age ? `${m.age} yrs` : null, m.occupation, m.area]
-                                    .filter(Boolean)
-                                    .join(" · ") || "Member"}
-                            </span>
-                          </span>
-                          {m.isHead && <span className="badge badge--neutral">Head</span>}
-                        </li>
-                      ))}
-                    </ul>
-                    {remaining > 0 && (
-                      <p className="app-card__sub">
-                        +{remaining} more {remaining === 1 ? "member" : "members"}{" "}
-                        <Link to="/family" className="app-card__link">
-                          View all <span aria-hidden="true">→</span>
-                        </Link>
-                      </p>
-                    )}
-                  </div>
-                </section>
-
-                <section className="app-section" aria-labelledby="updates-heading" id="updates">
-                  <div className="app-section__head">
-                    <h2 id="updates-heading">Community Updates</h2>
-                  </div>
-                  <div className="app-empty">
-                    <span className="app-empty__icon" aria-hidden="true">
-                      <LpIcon d={LP_PATHS.bell} />
-                    </span>
-                    <h3>No new community updates.</h3>
-                    <p>Important announcements will appear here.</p>
-                  </div>
-                </section>
-              </div>
-
-              <div className="app-cols__side">
-                <section className="app-section" aria-labelledby="membership">
-                  <div className="app-section__head">
-                    <h2 id="membership">Membership</h2>
-                    {membership && <StatusBadge status={MEMBERSHIP_BADGE[membership.status]} />}
-                  </div>
-                  <div className="app-card">
-                    <dl className="app-kv">
-                      <div>
-                        <dt>Plan</dt>
-                        <dd>{year} Membership</dd>
-                      </div>
-                      <div>
-                        <dt>Amount</dt>
-                        <dd>
-                          {membership?.amount != null
-                            ? formatCurrency(membership.amount, membership.currency)
-                            : "Fee not yet recorded"}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Status</dt>
-                        <dd>{membership ? MEMBERSHIP_TEXT[membership.status] : "—"}</dd>
-                      </div>
-                    </dl>
-                    {isPaid ? (
-                      <p className="app-card__sub">Membership active for {year}.</p>
-                    ) : (
-                      <p className="app-card__sub">Complete your annual membership payment.</p>
-                    )}
-                    {isPaid ? (
-                      <Link to="/payments" className="btn btn--secondary btn--sm">
-                        View Payments
-                      </Link>
-                    ) : (
-                      <Link to="/payments" className="btn btn--primary btn--sm">
-                        Pay Membership <span aria-hidden="true">→</span>
-                      </Link>
-                    )}
-                  </div>
-                </section>
-
-                <section className="app-section" aria-labelledby="recent-payments">
-                  <div className="app-section__head">
-                    <h2 id="recent-payments">Recent Payments</h2>
-                    <Link to="/payments" className="app-card__link">
-                      View Payment History <span aria-hidden="true">→</span>
-                    </Link>
-                  </div>
-                  {hasPayment && membership ? (
-                    <ul className="app-rows">
-                      <li>
+                </div>
+                <p className="app-card__sub app-card__meta">
+                  Family #{family.familyId} · {memberCount}{" "}
+                  {memberCount === 1 ? "member" : "members"}
+                  {family.head
+                    ? ` · Head: ${fullName(family.head.firstName, family.head.middleName, family.head.lastName)}`
+                    : ""}
+                </p>
+                <ul className="app-members">
+                  {preview.map((m) => (
+                    <li key={m.id} className="app-members__row">
+                      <span className="app-avatar" aria-hidden="true">
+                        {m.firstName.charAt(0).toUpperCase()}
+                      </span>
+                      <span className="app-members__info">
+                        <strong>{fullName(m.firstName, m.middleName, m.lastName)}</strong>
                         <span>
-                          <strong>{membership.year ?? year} Membership</strong>
-                          <span>
-                            {formatCurrency(membership.amount ?? 0, membership.currency)}
-                            {membership.status === "pending" ? " · Not paid yet" : ""}
-                          </span>
+                          {m.isHead
+                            ? "Family Head"
+                            : [m.age ? `${m.age} yrs` : null, m.occupation, m.area]
+                                .filter(Boolean)
+                                .join(" · ") || "Member"}
                         </span>
-                        <StatusBadge status={MEMBERSHIP_BADGE[membership.status]} />
-                      </li>
-                    </ul>
-                  ) : (
-                    <p className="app-card__sub">No payments recorded yet.</p>
-                  )}
-                </section>
-
-                <section className="app-section" aria-labelledby="upcoming-events">
-                  <div className="app-section__head">
-                    <h2 id="upcoming-events">Upcoming Events</h2>
-                  </div>
-                  <div className="app-empty">
-                    <span className="app-empty__icon" aria-hidden="true">
-                      <LpIcon d={LP_PATHS.calendar} />
-                    </span>
-                    <h3>No upcoming events.</h3>
-                    <p>New community events and activities will appear here.</p>
-                    <Link to="/programs" className="btn btn--secondary btn--sm">
-                      Explore Programs <span aria-hidden="true">→</span>
+                      </span>
+                      {m.isHead && <span className="badge badge--neutral">Head</span>}
+                    </li>
+                  ))}
+                </ul>
+                {remaining > 0 && (
+                  <p className="app-card__sub">
+                    +{remaining} more {remaining === 1 ? "member" : "members"}{" "}
+                    <Link to="/family" className="app-card__link">
+                      View all <span aria-hidden="true">→</span>
                     </Link>
+                  </p>
+                )}
+              </section>
+
+              <section className="dash-panel" aria-labelledby="quick-actions">
+                <div className="dash-panel__head">
+                  <h2 id="quick-actions">Quick Actions</h2>
+                </div>
+                <p className="app-card__sub">Access the things you use most.</p>
+                <ul className="dash-actions">
+                  {QUICK_ACTIONS.map((a) => (
+                    <li key={a.title}>
+                      <Link to={a.to} className="dash-action">
+                        <span className="dash-action__icon">
+                          <LpIcon d={LP_PATHS[a.icon]} />
+                        </span>
+                        <span className="dash-action__text">
+                          <strong>{a.title}</strong>
+                          <span>{a.description}</span>
+                        </span>
+                        <span className="dash-action__arrow" aria-hidden="true">
+                          →
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="dash-panel" aria-labelledby="recent-payments">
+                <div className="dash-panel__head">
+                  <h2 id="recent-payments">Recent Payments</h2>
+                  <Link to="/payments" className="app-card__link">
+                    View Payment History <span aria-hidden="true">→</span>
+                  </Link>
+                </div>
+                {hasPayment && membership ? (
+                  <ul className="app-rows">
+                    <li>
+                      <span>
+                        <strong>{membership.year ?? year} Membership</strong>
+                        <span>
+                          {formatCurrency(membership.amount ?? 0, membership.currency)}
+                          {membership.status === "pending" ? " · Not paid yet" : ""}
+                        </span>
+                      </span>
+                      <StatusBadge status={MEMBERSHIP_BADGE[membership.status]} />
+                    </li>
+                  </ul>
+                ) : (
+                  <p className="app-card__sub">No payments recorded yet.</p>
+                )}
+              </section>
+
+              <section className="dash-panel" aria-labelledby="membership">
+                <div className="dash-panel__head">
+                  <h2 id="membership">Membership</h2>
+                  {membership && <StatusBadge status={MEMBERSHIP_BADGE[membership.status]} />}
+                </div>
+                <dl className="app-kv">
+                  <div>
+                    <dt>Plan</dt>
+                    <dd>{year} Membership</dd>
                   </div>
-                </section>
-              </div>
+                  <div>
+                    <dt>Amount</dt>
+                    <dd>
+                      {membership?.amount != null
+                        ? formatCurrency(membership.amount, membership.currency)
+                        : "Fee not yet recorded"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Status</dt>
+                    <dd>{membership ? MEMBERSHIP_TEXT[membership.status] : "—"}</dd>
+                  </div>
+                </dl>
+                {isPaid ? (
+                  <p className="app-card__sub">Membership active for {year}.</p>
+                ) : (
+                  <p className="app-card__sub">Complete your annual membership payment.</p>
+                )}
+                {isPaid ? (
+                  <Link to="/payments" className="btn btn--secondary btn--sm">
+                    View Payments
+                  </Link>
+                ) : (
+                  <Link to="/payments" className="btn btn--primary btn--sm">
+                    Pay Membership <span aria-hidden="true">→</span>
+                  </Link>
+                )}
+              </section>
+            </div>
+
+            {/* Secondary row — community activity and events. */}
+            <div className="dash-grid dash-grid--split">
+              <section className="dash-panel" aria-labelledby="updates-heading" id="updates">
+                <div className="dash-panel__head">
+                  <h2 id="updates-heading">Community Updates</h2>
+                </div>
+                <div className="app-empty app-empty--compact">
+                  <span className="app-empty__icon" aria-hidden="true">
+                    <LpIcon d={LP_PATHS.bell} />
+                  </span>
+                  <h3>No new community updates.</h3>
+                  <p>Important announcements will appear here.</p>
+                </div>
+              </section>
+
+              <section className="dash-panel" aria-labelledby="upcoming-events">
+                <div className="dash-panel__head">
+                  <h2 id="upcoming-events">Upcoming Events</h2>
+                </div>
+                <div className="app-empty app-empty--compact">
+                  <span className="app-empty__icon" aria-hidden="true">
+                    <LpIcon d={LP_PATHS.calendar} />
+                  </span>
+                  <h3>No upcoming events.</h3>
+                  <p>New community events and activities will appear here.</p>
+                  <Link to="/programs" className="btn btn--secondary btn--sm">
+                    Explore Programs <span aria-hidden="true">→</span>
+                  </Link>
+                </div>
+              </section>
             </div>
           </>
         )}
