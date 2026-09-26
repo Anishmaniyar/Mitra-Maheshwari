@@ -15,6 +15,8 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((value) => value === 'true'),
+  MEMBERSHIP_ANNUAL_FEE_AMOUNT: z.string().default('1100'),
+  MEMBERSHIP_CURRENCY: z.string().default('INR'),
 });
 
 export const env = envSchema.parse(process.env);

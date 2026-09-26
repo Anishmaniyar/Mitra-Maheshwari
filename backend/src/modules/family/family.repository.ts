@@ -165,6 +165,126 @@ export const findInvitationById = async (
   return result.rows[0] ? mapInvitationRow(result.rows[0]) : null;
 };
 
+export const findInvitationByToken = async (
+  token: string,
+): Promise<InvitationRow | null> => {
+  const result = await pool.query(
+    `SELECT ${INVITATION_COLUMNS} FROM family_invitations WHERE token = $1`,
+    [token],
+  );
+
+  return result.rows[0] ? mapInvitationRow(result.rows[0]) : null;
+};
+
+export const markInvitationExpired = async (id: string): Promise<void> => {
+  await pool.query(
+    `UPDATE family_invitations SET status = 'EXPIRED'
+     WHERE id = $1 AND status = 'PENDING'`,
+    [id],
+  );
+};
+
+export const acceptInvitation = async (
+  id: string,
+  client: PoolClient,
+): Promise<void> => {
+  await client.query(
+    `UPDATE family_invitations
+     SET status = 'ACCEPTED', accepted_at = now()
+     WHERE id = $1`,
+    [id],
+  );
+};
+
+export const createFamilyMember = async (
+  input: {
+    familyId: string;
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    mobile: string;
+    bloodGroup?: string;
+    age?: number;
+    occupation?: string;
+    area?: string;
+    panName?: string;
+    panNumber?: string;
+  },
+  client: PoolClient,
+): Promise<{ id: string; familyId: string }> => {
+  const result = await client.query(
+    `INSERT INTO members
+       (family_id, first_name, middle_name, last_name, mobile, blood_group,
+        age, occupation, area, pan_name, pan_number, is_head, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, FALSE, 'APPROVED')
+     RETURNING id, family_id`,
+    [
+      input.familyId,
+      input.firstName,
+      input.middleName ?? null,
+      input.lastName,
+      input.mobile,
+      input.bloodGroup ?? null,
+      input.age ?? null,
+      input.occupation ?? null,
+      input.area ?? null,
+      input.panName ?? null,
+      input.panNumber ?? null,
+    ],
+  );
+
+  const row = result.rows[0];
+  return { id: row.id as string, familyId: row.family_id as string };
+};
+
+export const createMemberAccount = async (
+  input: { memberId: string; mobile: string },
+  client: PoolClient,
+): Promise<{ id: string }> => {
+  const result = await client.query(
+    `INSERT INTO accounts (member_id, mobile)
+     VALUES ($1, $2)
+     RETURNING id`,
+    [input.memberId, input.mobile],
+  );
+
+  return { id: result.rows[0].id as string };
+};
+
+const MEMBER_UPDATE_COLUMNS = new Set([
+  'first_name',
+  'middle_name',
+  'last_name',
+  'blood_group',
+  'age',
+  'occupation',
+  'area',
+  'pan_name',
+  'pan_number',
+]);
+
+export const updateFamilyMember = async (
+  memberId: string,
+  fields: Record<string, string | number | null | undefined>,
+): Promise<FamilyMemberRow | null> => {
+  const entries = Object.entries(fields).filter(
+    ([column, value]) =>
+      MEMBER_UPDATE_COLUMNS.has(column) && value !== undefined,
+  );
+  if (entries.length === 0) {
+    return findFamilyMemberById(memberId);
+  }
+
+  const sets = entries.map(([column], index) => `${column} = $${index + 2}`);
+  const values = entries.map(([, value]) => value);
+  await pool.query(
+    `UPDATE members SET ${sets.join(', ')}, updated_at = now() WHERE id = $1`,
+    [memberId, ...values],
+  );
+
+  return findFamilyMemberById(memberId);
+};
+
 export const cancelInvitation = async (id: string): Promise<void> => {
   await pool.query(
     `UPDATE family_invitations SET status = 'CANCELLED' WHERE id = $1`,

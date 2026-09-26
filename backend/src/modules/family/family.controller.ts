@@ -90,3 +90,48 @@ export const removeFamilyMemberController = asyncHandler(
     });
   },
 );
+
+export const validateInvitationController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await FamilyService.validateInvitation(
+      (req.params as { token: string }).token,
+    );
+
+    return res.status(200).json({
+      message: 'Invitation is valid',
+      status: 'success',
+      data: result,
+    });
+  },
+);
+
+export const acceptInvitationController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await FamilyService.acceptInvitation(
+      (req.params as { token: string }).token,
+      req.body,
+    );
+
+    return res.status(201).json({
+      message: 'Invitation accepted successfully',
+      status: 'success',
+      data: result,
+    });
+  },
+);
+
+export const updateFamilyMemberController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await FamilyService.updateFamilyMember(
+      requireUser(req),
+      (req.params as { memberId: string }).memberId,
+      req.body,
+    );
+
+    return res.status(200).json({
+      message: 'Member updated successfully',
+      status: 'success',
+      data: result,
+    });
+  },
+);

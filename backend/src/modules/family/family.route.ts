@@ -53,4 +53,32 @@ familyRouter.delete(
   FamilyController.removeFamilyMemberController,
 );
 
+familyRouter.patch(
+  '/members/:memberId',
+  authenticate,
+  authorize('MEMBER'),
+  validateRequest({
+    params: FamilySchema.memberIdParamsSchema,
+    body: FamilySchema.updateFamilyMemberSchema,
+  }),
+  FamilyController.updateFamilyMemberController,
+);
+
+// Public invitation link routes: the invited person is not authenticated yet.
+// The unguessable token is the access mechanism; OTP proof is enforced at accept.
+familyRouter.get(
+  '/invitations/:token',
+  validateRequest({ params: FamilySchema.invitationTokenParamsSchema }),
+  FamilyController.validateInvitationController,
+);
+
+familyRouter.post(
+  '/invitations/:token/accept',
+  validateRequest({
+    params: FamilySchema.invitationTokenParamsSchema,
+    body: FamilySchema.acceptInvitationSchema,
+  }),
+  FamilyController.acceptInvitationController,
+);
+
 export default familyRouter;
