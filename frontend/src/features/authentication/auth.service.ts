@@ -47,6 +47,7 @@ export function toMember(profile: BackendMemberProfile): Member {
     isActiveMember: profile.status === "APPROVED",
     familyId: profile.familyId,
     isHead: profile.isHead,
+    role: profile.role,
   };
 }
 

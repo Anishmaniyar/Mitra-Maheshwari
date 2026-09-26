@@ -11,7 +11,8 @@
     "test": "node --import tsx --test",
     "db:create-migration": "node-pg-migrate create --migration-file-language ts --migrations-dir database/migrations",
     "db:migrate": "tsx ./node_modules/node-pg-migrate/bin/node-pg-migrate.js up --migrations-dir database/migrations",
-    "db:migrate:down": "tsx ./node_modules/node-pg-migrate/bin/node-pg-migrate.js down --migrations-dir database/migrations"
+    "db:migrate:down": "tsx ./node_modules/node-pg-migrate/bin/node-pg-migrate.js down --migrations-dir database/migrations",
+    "admin:seed": "tsx scripts/admin-seed.ts"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",

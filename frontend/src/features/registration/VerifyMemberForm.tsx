@@ -6,6 +6,7 @@ import { FormField } from "../../components/forms/FormField";
 
 export interface VerifyMemberInput {
   firstName: string;
+  middleName: string;
   lastName: string;
   mobile: string;
 }
@@ -17,6 +18,7 @@ interface VerifyMemberFormProps {
 
 export function VerifyMemberForm({ onSubmit, busy }: VerifyMemberFormProps) {
   const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
   const [mobile, setMobile] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -31,7 +33,7 @@ export function VerifyMemberForm({ onSubmit, busy }: VerifyMemberFormProps) {
 
     setErrors(next);
     if (Object.keys(next).length === 0) {
-      onSubmit({ firstName: firstName.trim(), lastName: lastName.trim(), mobile: digits });
+      onSubmit({ firstName: firstName.trim(), middleName: middleName.trim(), lastName: lastName.trim(), mobile: digits });
     }
   }
 
@@ -47,6 +49,17 @@ export function VerifyMemberForm({ onSubmit, busy }: VerifyMemberFormProps) {
           autoFocus
           onChange={(e) => setFirstName(e.target.value)}
           placeholder="e.g. Rajesh"
+        />
+      </FormField>
+
+      <FormField label="Middle name" htmlFor="vm-middleName">
+        <Input
+          id="vm-middleName"
+          name="middleName"
+          autoComplete="additional-name"
+          value={middleName}
+          onChange={(e) => setMiddleName(e.target.value)}
+          placeholder="e.g. Kumar"
         />
       </FormField>
 

@@ -28,6 +28,7 @@ export interface Member {
   isActiveMember: boolean;
   familyId: string;
   isHead: boolean;
+  role: string;
 }
 
 /** The authenticated application user — a member who verified their mobile. */
@@ -64,6 +65,8 @@ export interface RegistrationData {
   memberId: string;
   mobile: string;
   profile: ProfileFields;
+  /** join: OTP-verified lookup → details → complete. login: draft-assisted login. */
+  flow: "join" | "login";
 }
 
 /** Form-bound profile values (strings so inputs can be partially edited). */

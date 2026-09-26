@@ -11,10 +11,6 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('7d'),
   ACCESS_TOKEN_EXPIRES_IN: z.string().default('15m'),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('30d'),
-  DEMO_MODE: z
-    .enum(['true', 'false'])
-    .default('false')
-    .transform((value) => value === 'true'),
   MEMBERSHIP_ANNUAL_FEE_AMOUNT: z.string().default('1100'),
   MEMBERSHIP_CURRENCY: z.string().default('INR'),
   RAZORPAY_KEY_ID: z.string().default(''),

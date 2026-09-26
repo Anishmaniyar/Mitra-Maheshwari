@@ -1,7 +1,9 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import type { ReactNode } from "react";
-import { ProtectedRoute } from "../components/common/ProtectedRoute";
+import { AdminRoute, ProtectedRoute } from "../components/common/ProtectedRoute";
 import AboutPage from "../pages/AboutPage";
+import AdminDashboardPage from "../pages/AdminDashboardPage";
+import AdminLoginPage from "../pages/AdminLoginPage";
 import BloodPage from "../pages/BloodPage";
 import CommunityPage from "../pages/CommunityPage";
 import ContactPage from "../pages/ContactPage";
@@ -12,6 +14,7 @@ import InvitePage from "../pages/InvitePage";
 import LandingPage from "../pages/LandingPage";
 import MatrimonyPage from "../pages/MatrimonyPage";
 import MemberDetailsPage from "../pages/MemberDetailsPage";
+import MemberLoginPage from "../pages/MemberLoginPage";
 import MembershipPage from "../pages/MembershipPage";
 import NotificationsPage from "../pages/NotificationsPage";
 import OtpVerificationPage from "../pages/OtpVerificationPage";
@@ -35,10 +38,13 @@ export default function AppRoutes() {
       <Route path="/community" element={<CommunityPage />} />
       <Route path="/programs" element={<ProgramsPage />} />
       <Route path="/contact" element={<ContactPage />} />
-      <Route path="/login" element={<VerifyMemberPage />} />
+      <Route path="/login" element={<MemberLoginPage />} />
       <Route path="/register" element={<VerifyMemberPage />} />
+      <Route path="/join" element={<VerifyMemberPage />} />
       <Route path="/register/details" element={<MemberDetailsPage />} />
       <Route path="/register/verify" element={<OtpVerificationPage />} />
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
       <Route path="/invite/:token" element={<InvitePage />} />
 
       {/* Authenticated member portal */}

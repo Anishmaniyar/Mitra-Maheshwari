@@ -23,7 +23,8 @@ POST /api/auth/request-otp  { mobile }
   → hash OTP (never store the plain code; column: otps.code_hash)
   → INSERT otps (member_id = lookup by mobile, NULLABLE if no member yet;
                  expires_at = now + short window; attempts = 0)
-  → demo delivery: log OTP as 123456 (dev only — never in production)
+  → demo delivery (non-production): the real random OTP is logged to the
+     backend terminal only, e.g. `[OTP DEMO] OTP for mobile ending 1234: 583921`
   → 200 { message, status: 'success', data: { expiresAt } } — never echo the OTP
 ```
 

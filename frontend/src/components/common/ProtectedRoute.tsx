@@ -18,3 +18,21 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   return <>{children}</>;
 }
+
+/** UX-only guard: backend authorize('ADMIN') remains the security boundary. */
+export function AdminRoute({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="container">
+        <LoadingState message="Loading your session…" />
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/admin/login" replace />;
+  if (user.role !== "ADMIN") return <Navigate to="/dashboard" replace />;
+
+  return <>{children}</>;
+}

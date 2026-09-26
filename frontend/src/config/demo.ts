@@ -61,6 +61,7 @@ export const DEMO_MEMBER: Member = {
   isActiveMember: true,
   familyId: "9000001",
   isHead: true,
+  role: "MEMBER",
 };
 
 // ---------------------------------------------------------------------------

@@ -9,6 +9,7 @@ import { FormSection } from "../components/forms/FormSection";
 import { AppLayout } from "../components/layout/AppLayout";
 import { OnboardingLayout } from "../components/onboarding/OnboardingLayout";
 import { getDraft, saveDraft } from "../features/registration/draft";
+import { completeRegistration } from "../features/registration/registration.service";
 import type { ProfileFields } from "../types/api";
 import { BLOOD_GROUPS } from "../types/api";
 import { maskMobile } from "../utils/format";
@@ -20,6 +21,9 @@ export default function MemberDetailsPage() {
     draft ? { ...draft.profile } : emptyProfile(),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [pendingNotice, setPendingNotice] = useState<string | null>(null);
 
   if (!draft) return <Navigate to="/register" replace />;
   const registration = draft; // non-null alias (TS keeps closure narrowing for const)
@@ -42,8 +46,41 @@ export default function MemberDetailsPage() {
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    saveDraft({ memberId: registration.memberId, mobile: registration.mobile, profile: form });
+    // Join flow: mobile is already OTP-verified, so complete the registration
+    // directly (status PENDING). Login flow continues to OTP verification.
+    if (registration.flow === "join") {
+      void handleComplete();
+      return;
+    }
+
+    saveDraft({ memberId: registration.memberId, mobile: registration.mobile, profile: form, flow: registration.flow });
     navigate("/register/verify");
+  }
+
+  async function handleComplete() {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await completeRegistration({
+        mobile: registration.mobile,
+        firstName: form.firstName,
+        middleName: form.middleName || undefined,
+        lastName: form.lastName,
+        bloodGroup: form.bloodGroup || undefined,
+        age: form.age ? Number(form.age) : undefined,
+        occupation: form.occupation || undefined,
+        area: form.area || undefined,
+        panName: form.panName || undefined,
+        panNumber: form.panNumber || undefined,
+      });
+      setPendingNotice(
+        "Your registration has been submitted and is pending admin approval. You will be able to log in once it is approved.",
+      );
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Could not submit your registration. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -169,8 +206,16 @@ export default function MemberDetailsPage() {
             </FormSection>
 
             <div className="onb-actions">
+              {submitError && <div className="notice notice--error">{submitError}</div>}
+              {pendingNotice && (
+                <div className="notice notice--success" role="status">
+                  {pendingNotice}
+                </div>
+              )}
               <div className="onb-actions__buttons">
-                <Button type="submit">Continue to Verification</Button>
+                <Button type="submit" loading={submitting}>
+                  {registration.flow === "join" ? "Complete Registration" : "Continue to Verification"}
+                </Button>
               </div>
             </div>
           </form>

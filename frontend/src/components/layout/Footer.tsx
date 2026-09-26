@@ -26,6 +26,7 @@ export function Footer() {
               <li><Link to="/login">Member Login</Link></li>
               <li><Link to="/register">Join the Community</Link></li>
               <li><Link to="/programs">Membership</Link></li>
+              <li><Link to="/admin/login">Admin Login</Link></li>
             </ul>
           </nav>
           <nav aria-label="Support">

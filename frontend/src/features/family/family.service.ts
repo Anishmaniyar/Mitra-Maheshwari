@@ -73,6 +73,7 @@ function toMember(row: BackendFamilyMember, familyId: string): Member {
     isActiveMember: row.status === "APPROVED",
     familyId,
     isHead: row.isHead,
+    role: "",
   };
 }
 

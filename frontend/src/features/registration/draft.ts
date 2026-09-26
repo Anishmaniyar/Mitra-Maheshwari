@@ -1,10 +1,34 @@
-import type { Member, ProfileFields, ProfilePatch, RegistrationData } from "../../types/api";
+import type { Member, NewMemberInput, ProfileFields, ProfilePatch, RegistrationData } from "../../types/api";
 
 const KEY = "mm_registration_draft";
 
 /** Kept in sessionStorage so a refresh mid-flow does not lose progress. */
 export function saveDraft(draft: RegistrationData): void {
   sessionStorage.setItem(KEY, JSON.stringify(draft));
+}
+
+export function emptyProfile(): ProfileFields {
+  return {
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    age: "",
+    bloodGroup: "",
+    occupation: "",
+    area: "",
+    panName: "",
+    panNumber: "",
+  };
+}
+
+/** Draft profile for a brand-new family registration (details filled later). */
+export function profileFromNewInput(input: NewMemberInput): ProfileFields {
+  return {
+    ...emptyProfile(),
+    firstName: input.firstName,
+    middleName: input.middleName ?? "",
+    lastName: input.lastName,
+  };
 }
 
 export function getDraft(): RegistrationData | null {
@@ -16,7 +40,8 @@ export function getDraft(): RegistrationData | null {
       typeof parsed.memberId !== "string" ||
       typeof parsed.mobile !== "string" ||
       typeof parsed.profile !== "object" ||
-      parsed.profile === null
+      parsed.profile === null ||
+      (parsed.flow !== "join" && parsed.flow !== "login")
     ) {
       return null;
     }

@@ -1,18 +1,22 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../components/common/Button";
 import { LoadingState } from "../components/common/LoadingState";
 import { AppLayout } from "../components/layout/AppLayout";
 import { OnboardingLayout } from "../components/onboarding/OnboardingLayout";
+import { OtpVerifyForm } from "../features/authentication/OtpVerifyForm";
+import { sendOtp, verifyOtp } from "../features/authentication/auth.service";
 import { CandidatePicker } from "../features/registration/CandidatePicker";
 import { NewMemberForm } from "../features/registration/NewMemberForm";
 import { VerifyMemberForm } from "../features/registration/VerifyMemberForm";
 import type { VerifyMemberInput } from "../features/registration/VerifyMemberForm";
-import { profileFromMember, saveDraft } from "../features/registration/draft";
+import { profileFromMember, profileFromNewInput, saveDraft } from "../features/registration/draft";
 import { createMember, matchMember } from "../features/registration/registration.service";
+import { useCountdown } from "../hooks/useCountdown";
+import { maskMobile } from "../utils/format";
 import type { Member, NewMemberInput } from "../types/api";
 
-type Step = "form" | "loading" | "candidates" | "notfound" | "newMember";
+type Step = "form" | "otp" | "loading" | "candidates" | "notfound" | "newMember" | "registered";
 
 export default function VerifyMemberPage() {
   const navigate = useNavigate();
@@ -23,20 +27,69 @@ export default function VerifyMemberPage() {
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState<VerifyMemberInput | null>(null);
   const [creating, setCreating] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const { seconds, restart } = useCountdown(60);
 
-  function startWithMember(member: Member) {
-    saveDraft({ memberId: member.id, mobile: member.mobile, profile: profileFromMember(member) });
+  function startWithMember(member: Member, mobile: string) {
+    saveDraft({
+      memberId: member.id,
+      mobile,
+      profile: profileFromMember(member),
+      flow: "join",
+    });
     navigate("/register/details");
   }
 
-  async function handleMatch(input: VerifyMemberInput) {
+  async function handleDetails(input: VerifyMemberInput) {
     setAttempt(input);
+    setSending(true);
+    setOtpError(null);
+    try {
+      await sendOtp({ memberId: "", mobile: input.mobile });
+      restart();
+      setStep("otp");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send the code. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleVerifyOtp() {
+    if (!attempt || otp.length !== 6) {
+      setOtpError("Enter the 6-digit code sent to your mobile number.");
+      return;
+    }
+    setVerifying(true);
+    setOtpError(null);
+    try {
+      // 200 means this mobile already has an account — it belongs to login.
+      await verifyOtp({ memberId: "", mobile: attempt.mobile, otp });
+      setStep("registered");
+    } catch (err) {
+      const status =
+        err instanceof Error && "status" in err ? (err as { status?: number }).status : undefined;
+      if (status === 404) {
+        await lookupMember();
+      } else {
+        setOtpError(err instanceof Error ? err.message : "Verification failed. Please try again.");
+      }
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  async function lookupMember() {
+    if (!attempt) return;
     setStep("loading");
     setError(null);
     try {
-      const result = await matchMember(input);
+      const result = await matchMember(attempt);
       if (result.status === "EXISTING_MEMBER_FOUND" && result.member) {
-        startWithMember(result.member);
+        startWithMember(result.member, attempt.mobile);
       } else if (result.status === "MULTIPLE_MATCHES") {
         setCandidates(result.candidates);
         setStep("candidates");
@@ -54,7 +107,13 @@ export default function VerifyMemberPage() {
     setError(null);
     try {
       const res = await createMember(input);
-      startWithMember(res.member);
+      saveDraft({
+        memberId: res.member.id,
+        mobile: input.mobile,
+        profile: profileFromNewInput(input),
+        flow: "join",
+      });
+      navigate("/register/details");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create your record. Please try again.");
       setStep("newMember");
@@ -75,16 +134,43 @@ export default function VerifyMemberPage() {
           {step === "form" && (
             <>
               {error && <div className="notice notice--error">{error}</div>}
-              <VerifyMemberForm onSubmit={(input) => void handleMatch(input)} busy={false} />
+              <VerifyMemberForm onSubmit={(input) => void handleDetails(input)} busy={sending} />
             </>
+          )}
+
+          {step === "otp" && attempt && (
+            <OtpVerifyForm
+              maskedMobile={maskMobile(attempt.mobile)}
+              sending={sending}
+              verifying={verifying}
+              error={otpError}
+              resendInSeconds={seconds}
+              otp={otp}
+              onOtpChange={setOtp}
+              onSubmit={() => void handleVerifyOtp()}
+              onResend={() => void handleDetails(attempt)}
+              onChangeMobile={() => setStep("form")}
+            />
+          )}
+
+          {step === "registered" && (
+            <div className="onb-note">
+              <h2>This mobile number is already registered.</h2>
+              <p>Please log in with your verified mobile number instead.</p>
+              <div className="onb-actions__buttons">
+                <Link to="/login" className="btn btn--primary">
+                  Go to Member Login
+                </Link>
+              </div>
+            </div>
           )}
 
           {step === "loading" && <LoadingState message="Checking your details…" />}
 
-          {step === "candidates" && (
+          {step === "candidates" && attempt && (
             <CandidatePicker
               candidates={candidates}
-              onSelect={startWithMember}
+              onSelect={(member) => startWithMember(member, attempt.mobile)}
               onBack={() => {
                 setCandidates([]);
                 setStep("form");

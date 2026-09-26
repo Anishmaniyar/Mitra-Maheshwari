@@ -31,6 +31,7 @@ function candidateToMember(candidate: BackendCandidate, mobile: string): Member 
     isActiveMember: false,
     familyId: "",
     isHead: false,
+    role: "",
   };
 }
 
@@ -105,6 +106,7 @@ export function createMember(input: NewMemberInput): Promise<CreateMemberRespons
     isActiveMember: false,
     familyId: "",
     isHead: false,
+    role: "",
   };
   return Promise.resolve({ member });
 }

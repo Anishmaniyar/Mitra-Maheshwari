@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { AppLayout } from "../components/layout/AppLayout";
 import { OnboardingLayout } from "../components/onboarding/OnboardingLayout";
 import { OtpVerifyForm } from "../features/authentication/OtpVerifyForm";
 import { resendOtp, sendOtp, updateMe, verifyOtp } from "../features/authentication/auth.service";
-import { completeRegistration } from "../features/registration/registration.service";
 import { clearDraft, getDraft, profileToPatch } from "../features/registration/draft";
 import { useAuth } from "../hooks/useAuth";
 import { useCountdown } from "../hooks/useCountdown";
@@ -19,7 +18,7 @@ export default function OtpVerificationPage() {
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pendingNotice, setPendingNotice] = useState<string | null>(null);
+  const [notRegistered, setNotRegistered] = useState(false);
   const { seconds, restart } = useCountdown(60);
   const sentOnce = useRef(false);
 
@@ -66,38 +65,20 @@ export default function OtpVerificationPage() {
         otp,
       });
       login(result.token, result.member);
-      // Persist any corrections made on the review form now that the number is verified.
-      const me = await updateMe(result.member.id, profileToPatch(registration.profile));
-      setUser(me.member);
+      // Persist corrections made on the review form — but only when the draft
+      // actually carries profile details (member login has an empty profile).
+      if (registration.profile.firstName.trim() && registration.profile.lastName.trim()) {
+        const me = await updateMe(result.member.id, profileToPatch(registration.profile));
+        setUser(me.member);
+      }
       clearDraft();
       navigate("/dashboard", { replace: true });
     } catch (err) {
       const status = err instanceof Error && "status" in err ? (err as { status?: number }).status : undefined;
       const message = err instanceof Error ? err.message : "Verification failed. Please try again.";
-      // No account yet: the verified OTP is the ownership proof, so complete
-      // the registration — it stays PENDING until admin approval.
       if (status === 404) {
-        try {
-          await completeRegistration({
-            mobile: registration.mobile,
-            firstName: registration.profile.firstName,
-            middleName: registration.profile.middleName || undefined,
-            lastName: registration.profile.lastName,
-            bloodGroup: registration.profile.bloodGroup || undefined,
-            age: registration.profile.age ? Number(registration.profile.age) : undefined,
-            occupation: registration.profile.occupation || undefined,
-            area: registration.profile.area || undefined,
-            panName: registration.profile.panName || undefined,
-            panNumber: registration.profile.panNumber || undefined,
-          });
-          clearDraft();
-          setPendingNotice(
-            "Your registration has been submitted and is pending admin approval. You will be able to log in once it is approved.",
-          );
-          return;
-        } catch (completeErr) {
-          setError(completeErr instanceof Error ? completeErr.message : message);
-        }
+        setNotRegistered(true);
+        setError(null);
       } else {
         setError(message);
       }
@@ -142,9 +123,10 @@ export default function OtpVerificationPage() {
             onResend={() => void requestOtp(true)}
             onChangeMobile={handleChangeMobile}
           />
-          {pendingNotice && (
-            <div className="notice notice--success" role="status">
-              {pendingNotice}
+          {notRegistered && (
+            <div className="notice notice--info" role="status">
+              This mobile number is not registered yet.{" "}
+              <Link to="/join">Join the Community</Link> to create your registration.
             </div>
           )}
         </OnboardingLayout>

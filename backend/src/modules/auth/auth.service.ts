@@ -13,7 +13,6 @@ import type { RequestOtpInput, VerifyOtpInput } from './auth.schema.js';
 const OTP_EXPIRY_MINUTES = 5;
 const RESEND_COOLDOWN_SECONDS = 30;
 const MAX_RESEND_COUNT = 5;
-const DEMO_OTP = '123456';
 
 export interface IssuedAuth {
   accessToken: string;
@@ -57,7 +56,10 @@ export const requestOtp = async (
     }
   }
 
-  const code = env.DEMO_MODE ? DEMO_OTP : generateOtp();
+  // Real random OTP every time. Delivery is out of scope for now: in
+  // non-production the code is logged to the backend terminal only
+  // (never returned in the API response).
+  const code = generateOtp();
   const identity = await AuthRepository.findAuthIdentityByMobile(input.mobile);
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
@@ -69,8 +71,8 @@ export const requestOtp = async (
     resendCount: pending ? pending.resendCount + 1 : 0,
   });
 
-  if (env.DEMO_MODE) {
-    console.log(`[demo] OTP for ${input.mobile}: ${DEMO_OTP}`);
+  if (env.NODE_ENV !== 'production') {
+    console.log(`[OTP DEMO] OTP for mobile ending ${input.mobile.slice(-4)}: ${code}`);
   }
 
   return { expiresAt };
