@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { clearToken, getToken, setToken } from "../services/api";
-import { getMe } from "../features/authentication/auth.service";
+import { getMe, logout as logoutRequest } from "../features/authentication/auth.service";
 import type { AuthUser } from "../types/api";
 
 interface AuthContextValue {
@@ -50,6 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    // Revoke the server-side refresh token; local state clears regardless.
+    void logoutRequest().catch(() => undefined);
     clearToken();
     setUserState(null);
   }, []);

@@ -47,7 +47,7 @@ const DEMO_MEMBERSHIP_CURRENCY = "INR";
 // ---------------------------------------------------------------------------
 
 export const DEMO_MEMBER: Member = {
-  id: 9000001,
+  id: "9000001",
   firstName: "Demo",
   middleName: "Community",
   lastName: "Member",
@@ -59,7 +59,7 @@ export const DEMO_MEMBER: Member = {
   panName: "DEMO COMMUNITY MEMBER",
   panNumber: "ABCDE1234F",
   isActiveMember: true,
-  familyId: 9000001,
+  familyId: "9000001",
   isHead: true,
 };
 
@@ -68,7 +68,7 @@ export const DEMO_MEMBER: Member = {
 // ---------------------------------------------------------------------------
 
 function demoFamilyMember(input: {
-  id: number;
+  id: string;
   firstName: string;
   middleName: string;
   lastName: string;
@@ -88,7 +88,7 @@ function demoFamilyMember(input: {
 
 const DEMO_FAMILY_MEMBERS: FamilyMember[] = [
   demoFamilyMember({
-    id: 9000001,
+    id: "9000001",
     firstName: "Demo",
     middleName: "Community",
     lastName: "Member",
@@ -100,7 +100,7 @@ const DEMO_FAMILY_MEMBERS: FamilyMember[] = [
     mobile: DEMO_MEMBER.mobile,
   }),
   demoFamilyMember({
-    id: 9000002,
+    id: "9000002",
     firstName: "Demo",
     middleName: "",
     lastName: "Member Two",
@@ -112,7 +112,7 @@ const DEMO_FAMILY_MEMBERS: FamilyMember[] = [
     mobile: "9888888888",
   }),
   demoFamilyMember({
-    id: 9000003,
+    id: "9000003",
     firstName: "Demo",
     middleName: "",
     lastName: "Member Three",
@@ -127,7 +127,7 @@ const DEMO_FAMILY_MEMBERS: FamilyMember[] = [
 
 // Mutable so "Add family member" works within a demo session. Resets on reload.
 let demoFamily: Family = {
-  familyId: 9000001,
+  familyId: "9000001",
   head: DEMO_MEMBER,
   members: DEMO_FAMILY_MEMBERS,
   membership: {
@@ -144,8 +144,8 @@ let demoFamily: Family = {
 
 let demoPayments: Payment[] = [
   {
-    id: 9000003,
-    familyId: 9000001,
+    id: "9000003",
+    familyId: "9000001",
     year: new Date().getFullYear(),
     amount: DEMO_MEMBERSHIP_AMOUNT,
     currency: DEMO_MEMBERSHIP_CURRENCY,
@@ -156,8 +156,8 @@ let demoPayments: Payment[] = [
     updatedAt: new Date().toISOString(),
   },
   {
-    id: 9000002,
-    familyId: 9000001,
+    id: "9000002",
+    familyId: "9000001",
     year: new Date().getFullYear() - 1,
     amount: DEMO_MEMBERSHIP_AMOUNT,
     currency: DEMO_MEMBERSHIP_CURRENCY,
@@ -168,8 +168,8 @@ let demoPayments: Payment[] = [
     updatedAt: new Date(Date.UTC(new Date().getFullYear() - 1, 3, 12, 10, 5, 0)).toISOString(),
   },
   {
-    id: 9000001,
-    familyId: 9000001,
+    id: "9000001",
+    familyId: "9000001",
     year: new Date().getFullYear() - 2,
     amount: DEMO_MEMBERSHIP_AMOUNT,
     currency: DEMO_MEMBERSHIP_CURRENCY,
@@ -194,15 +194,15 @@ export async function demoCreateMember(_input: NewMemberInput): Promise<CreateMe
   return { member: DEMO_MEMBER };
 }
 
-export async function demoSendOtp(_input: { memberId: number; mobile: string }): Promise<SendOtpResponse> {
+export async function demoSendOtp(_input: { memberId: string; mobile: string }): Promise<SendOtpResponse> {
   return { expiresInSeconds: 300 };
 }
 
-export async function demoResendOtp(_input: { memberId: number; mobile: string }): Promise<SendOtpResponse> {
+export async function demoResendOtp(_input: { memberId: string; mobile: string }): Promise<SendOtpResponse> {
   return { expiresInSeconds: 300 };
 }
 
-export async function demoVerifyOtp(input: { memberId: number; mobile: string; otp: string }): Promise<VerifyOtpResponse> {
+export async function demoVerifyOtp(input: { memberId: string; mobile: string; otp: string }): Promise<VerifyOtpResponse> {
   if (input.otp !== DEMO_TEST_OTP) {
     throw new ApiError(400, "INVALID_OTP", "The code you entered is incorrect. In demo mode, use 123456.");
   }
@@ -223,7 +223,7 @@ export async function demoGetFamily(): Promise<{ family: Family }> {
 
 export async function demoAddFamilyMember(input: NewMemberInput): Promise<{ family: Family }> {
   const member: FamilyMember = {
-    id: demoFamily.members.length + 9000001,
+    id: `demo-member-${demoFamily.members.length + 1}`,
     firstName: input.firstName,
     middleName: input.middleName ?? null,
     lastName: input.lastName,
@@ -249,8 +249,8 @@ export async function demoCreatePayment(): Promise<{ payment: Payment }> {
   if (existing) return { payment: existing };
 
   const payment: Payment = {
-    id: demoPayments.length + 9000001,
-    familyId: 9000001,
+    id: `demo-payment-${demoPayments.length + 1}`,
+    familyId: "9000001",
     year,
     amount: DEMO_MEMBERSHIP_AMOUNT,
     currency: DEMO_MEMBERSHIP_CURRENCY,

@@ -8,6 +8,7 @@ import ContactPage from "../pages/ContactPage";
 import DashboardPage from "../pages/DashboardPage";
 import DiscoverPage from "../pages/DiscoverPage";
 import FamilyPage from "../pages/FamilyPage";
+import InvitePage from "../pages/InvitePage";
 import LandingPage from "../pages/LandingPage";
 import MatrimonyPage from "../pages/MatrimonyPage";
 import MemberDetailsPage from "../pages/MemberDetailsPage";
@@ -38,6 +39,7 @@ export default function AppRoutes() {
       <Route path="/register" element={<VerifyMemberPage />} />
       <Route path="/register/details" element={<MemberDetailsPage />} />
       <Route path="/register/verify" element={<OtpVerificationPage />} />
+      <Route path="/invite/:token" element={<InvitePage />} />
 
       {/* Authenticated member portal */}
       <Route path="/dashboard" element={<Protected><DashboardPage /></Protected>} />

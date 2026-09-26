@@ -5,6 +5,12 @@ import * as RegistrationController from './registration.controller.js';
 
 const registrationRouter = Router();
 
+registrationRouter.get(
+  '/candidates',
+  validateRequest({ query: RegistrationSchema.candidateQuerySchema }),
+  RegistrationController.findCandidatesController,
+);
+
 registrationRouter.post(
   '/complete',
   validateRequest(RegistrationSchema.completeRegistrationSchema),

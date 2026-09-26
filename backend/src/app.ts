@@ -1,5 +1,6 @@
 import cookieParser from 'cookie-parser';
 import express from 'express';
+import { pool } from './config/database.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import routes from './routes/index.js';
 
@@ -12,11 +13,24 @@ app.use('/api/payments/webhook/razorpay', express.raw({ type: 'application/json'
 app.use(express.json());
 app.use(cookieParser());
 
-app.get('/health', (_req, res) => {
+app.get('/health', async (_req, res) => {
+  let db = 'down';
+  try {
+    await pool.query('SELECT 1');
+    db = 'up';
+  } catch {
+    db = 'down';
+  }
+
   res.status(200).json({
     message: 'OK',
     status: 'success',
-    data: null,
+    data: {
+      status: 'ok',
+      uptime: Math.floor(process.uptime()),
+      db,
+      timestamp: new Date().toISOString(),
+    },
   });
 });
 

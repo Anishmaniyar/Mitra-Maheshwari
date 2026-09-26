@@ -2,7 +2,8 @@ export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] a
 
 /* Domain types shared across the frontend.
    Field names follow the API's camelCase convention; the backend stores the
-   snake_case member fields (first_name, last_name, ...) listed in the spec. */
+   snake_case member fields (first_name, last_name, ...) listed in the spec.
+   IDs are backend UUID strings throughout. */
 
 /** Aggregate community counters from GET /api/stats (public, real data). */
 export interface CommunityStats {
@@ -13,7 +14,7 @@ export interface CommunityStats {
 
 /** A community member record (imported community data). */
 export interface Member {
-  id: number;
+  id: string;
   firstName: string;
   middleName: string | null;
   lastName: string;
@@ -25,7 +26,7 @@ export interface Member {
   panName: string | null;
   panNumber: string | null;
   isActiveMember: boolean;
-  familyId: number;
+  familyId: string;
   isHead: boolean;
 }
 
@@ -60,7 +61,7 @@ export interface ProfilePatch {
 
 /** In-progress registration carried between /register/details and /register/verify. */
 export interface RegistrationData {
-  memberId: number;
+  memberId: string;
   mobile: string;
   profile: ProfileFields;
 }
@@ -97,7 +98,7 @@ export interface Membership {
 }
 
 export interface FamilyMember {
-  id: number;
+  id: string;
   firstName: string;
   middleName: string | null;
   lastName: string;
@@ -111,17 +112,26 @@ export interface FamilyMember {
 }
 
 export interface Family {
-  familyId: number;
+  familyId: string;
   head: Member | null;
   members: FamilyMember[];
   membership: Membership;
 }
 
+export interface FamilyInvitation {
+  id: string;
+  inviteeName: string;
+  inviteeMobile: string | null;
+  inviteeEmail: string | null;
+  status: string;
+  expiresAt: string;
+}
+
 export type PaymentStatus = "pending" | "paid" | "failed";
 
 export interface Payment {
-  id: number;
-  familyId: number;
+  id: string;
+  familyId: string;
   year: number;
   amount: number;
   currency: string;
@@ -130,6 +140,18 @@ export interface Payment {
   status: PaymentStatus;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PaymentCheckout {
+  keyId: string;
+  orderId: string;
+  amountPaise: number;
+  currency: string;
+}
+
+export interface CreateOrderResponse {
+  payment: Payment;
+  checkout: PaymentCheckout;
 }
 
 /** Input for creating a new member (registration) or adding a family member. */

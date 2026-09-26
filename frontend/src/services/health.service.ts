@@ -17,6 +17,13 @@ export interface HealthStatus {
   timestamp: string;
 }
 
+interface BackendHealth {
+  status: string;
+  uptime: number;
+  db: string;
+  timestamp: string;
+}
+
 export async function getHealth(): Promise<HealthStatus> {
   let res: Response;
   try {
@@ -25,7 +32,17 @@ export async function getHealth(): Promise<HealthStatus> {
     throw new ApiError(0, "NETWORK_ERROR", "Could not reach the server.");
   }
   if (!res.ok) throw new ApiError(res.status, "HTTP_ERROR", `Health check failed (${res.status})`);
-  const envelope = (await res.json()) as { success: boolean; data: HealthStatus };
-  if (!envelope?.success) throw new ApiError(res.status, "HTTP_ERROR", "Health check failed.");
-  return envelope.data;
+  const envelope = (await res.json()) as {
+    status?: string;
+    data?: BackendHealth | null;
+  };
+  if (envelope?.status !== "success" || !envelope.data) {
+    throw new ApiError(res.status, "HTTP_ERROR", "Health check failed.");
+  }
+  return {
+    status: envelope.data.status,
+    uptime: envelope.data.uptime,
+    db: envelope.data.db,
+    timestamp: envelope.data.timestamp,
+  };
 }

@@ -13,7 +13,7 @@ export function getDraft(): RegistrationData | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as RegistrationData;
     if (
-      typeof parsed.memberId !== "number" ||
+      typeof parsed.memberId !== "string" ||
       typeof parsed.mobile !== "string" ||
       typeof parsed.profile !== "object" ||
       parsed.profile === null

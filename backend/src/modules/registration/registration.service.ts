@@ -3,7 +3,7 @@ import { pool } from '../../config/database.js';
 import { AppError } from '../../shared/errors/appError.js';
 import * as AuthRepository from '../auth/auth.repository.js';
 import * as RegistrationRepository from './registration.repository.js';
-import type { CompleteRegistrationInput } from './registration.schema.js';
+import type { CandidateQuery, CompleteRegistrationInput } from './registration.schema.js';
 
 const OTP_PROOF_WINDOW_MINUTES = 15;
 const FAMILY_CODE_RETRIES = 3;
@@ -26,6 +26,21 @@ const isUniqueViolation = (error: unknown): boolean =>
   error !== null &&
   'code' in error &&
   (error as { code: unknown }).code === '23505';
+
+export const findCandidates = async (query: CandidateQuery) => {
+  const candidates =
+    await RegistrationRepository.findCandidateMembersByName(
+      query.firstName,
+      query.lastName,
+    );
+
+  return candidates.map((candidate) => ({
+    id: candidate.id,
+    firstName: candidate.firstName,
+    middleName: candidate.middleName,
+    lastName: candidate.lastName,
+  }));
+};
 
 export const completeRegistration = async (
   input: CompleteRegistrationInput,

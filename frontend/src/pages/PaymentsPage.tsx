@@ -9,7 +9,7 @@ import type { BadgeStatus } from "../components/common/StatusBadge";
 import { AppLayout } from "../components/layout/AppLayout";
 import { PageHeader } from "../components/layout/PageHeader";
 import { PaymentHistory } from "../features/payment/PaymentHistory";
-import { createPayment, getPayments } from "../features/payment/payment.service";
+import { createPayment, getPayments, payWithRazorpay, verifyPayment } from "../features/payment/payment.service";
 import type { MembershipStatus, Payment } from "../types/api";
 import { formatCurrency } from "../utils/format";
 
@@ -49,11 +49,23 @@ export default function PaymentsPage() {
     setPayNotice(null);
     try {
       const res = await createPayment();
+      if (!res.checkout.orderId) {
+        setPayNotice({
+          type: "success",
+          text: "Your payment has been initiated. It will be confirmed once the gateway verifies it.",
+        });
+        if (res.payment) await load();
+        return;
+      }
+      // Real Razorpay order: open Checkout, then verify server-side.
+      // Nothing is treated as paid until backend verification succeeds.
+      const gateway = await payWithRazorpay(res.checkout);
+      await verifyPayment(gateway);
       setPayNotice({
         type: "success",
-        text: "Your payment has been initiated. It will be confirmed once the gateway verifies it.",
+        text: "Payment verified successfully. Your membership is now active.",
       });
-      if (res.payment) await load();
+      await load();
     } catch (err) {
       setPayNotice({
         type: "error",

@@ -29,3 +29,12 @@ export const completeRegistrationSchema = z.object({
 });
 
 export type CompleteRegistrationInput = z.infer<typeof completeRegistrationSchema>;
+
+// Public candidate lookup: names only. Never returns mobiles or other
+// private fields — the typed mobile is verified separately via OTP.
+export const candidateQuerySchema = z.object({
+  firstName: z.string().trim().min(1, 'First name is required').max(100),
+  lastName: z.string().trim().min(1, 'Last name is required').max(100),
+});
+
+export type CandidateQuery = z.infer<typeof candidateQuerySchema>;
