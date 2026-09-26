@@ -17,6 +17,9 @@ const envSchema = z.object({
     .transform((value) => value === 'true'),
   MEMBERSHIP_ANNUAL_FEE_AMOUNT: z.string().default('1100'),
   MEMBERSHIP_CURRENCY: z.string().default('INR'),
+  RAZORPAY_KEY_ID: z.string().default(''),
+  RAZORPAY_KEY_SECRET: z.string().default(''),
+  RAZORPAY_WEBHOOK_SECRET: z.string().default(''),
 });
 
 export const env = envSchema.parse(process.env);

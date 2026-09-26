@@ -77,6 +77,73 @@ export const findSuccessfulPaymentByFamilyAndYear = async (
   return result.rows[0] ? mapPaymentRow(result.rows[0]) : null;
 };
 
+export const findPaymentByProviderOrderId = async (
+  providerOrderId: string,
+): Promise<PaymentRow | null> => {
+  const result = await pool.query(
+    `SELECT ${PAYMENT_COLUMNS} FROM payments WHERE provider_order_id = $1`,
+    [providerOrderId],
+  );
+
+  return result.rows[0] ? mapPaymentRow(result.rows[0]) : null;
+};
+
+export const updatePaymentProviderOrder = async (
+  id: string,
+  providerOrderId: string,
+): Promise<PaymentRow> => {
+  const result = await pool.query(
+    `UPDATE payments
+     SET provider_order_id = $2, status = 'ORDER_CREATED', updated_at = now()
+     WHERE id = $1
+     RETURNING ${PAYMENT_COLUMNS}`,
+    [id, providerOrderId],
+  );
+
+  return mapPaymentRow(result.rows[0]);
+};
+
+// Forward-only status transition with built-in idempotency guard:
+// PENDING/ORDER_CREATED → AUTHORIZED/CAPTURED/FAILED,
+// AUTHORIZED → CAPTURED, never leaves CAPTURED/REFUNDED.
+export const transitionPaymentStatus = async (
+  id: string,
+  toStatus: 'AUTHORIZED' | 'CAPTURED' | 'FAILED',
+  providerPaymentId?: string,
+): Promise<PaymentRow | null> => {
+  const result = await pool.query(
+    `UPDATE payments
+     SET status = CASE
+       WHEN status IN ('PENDING', 'ORDER_CREATED')
+         AND $2 IN ('AUTHORIZED', 'CAPTURED', 'FAILED') THEN $2::payment_status
+       WHEN status = 'AUTHORIZED' AND $2 = 'CAPTURED' THEN $2::payment_status
+       ELSE status
+     END,
+     provider_payment_id = COALESCE($3, provider_payment_id),
+     updated_at = now()
+     WHERE id = $1
+     RETURNING ${PAYMENT_COLUMNS}`,
+    [id, toStatus, providerPaymentId ?? null],
+  );
+
+  return result.rows[0] ? mapPaymentRow(result.rows[0]) : null;
+};
+
+export const findLatestPaymentByFamilyAndYear = async (
+  familyId: string,
+  year: number,
+): Promise<PaymentRow | null> => {
+  const result = await pool.query(
+    `SELECT ${PAYMENT_COLUMNS} FROM payments
+     WHERE family_id = $1 AND "year" = $2
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [familyId, year],
+  );
+
+  return result.rows[0] ? mapPaymentRow(result.rows[0]) : null;
+};
+
 export const findPaymentsByFamilyId = async (
   familyId: string,
 ): Promise<PaymentRow[]> => {

@@ -22,6 +22,49 @@ export const createOrderController = asyncHandler(
   },
 );
 
+export const verifyPaymentController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const body = req.body as {
+      razorpay_order_id: string;
+      razorpay_payment_id: string;
+      razorpay_signature: string;
+    };
+    const result = await PaymentService.verifyPayment(requireUser(req), {
+      orderId: body.razorpay_order_id,
+      paymentId: body.razorpay_payment_id,
+      signature: body.razorpay_signature,
+    });
+
+    return res.status(200).json({
+      message: 'Payment verified successfully',
+      status: 'success',
+      data: result,
+    });
+  },
+);
+
+// No authentication: the webhook signature is the credential.
+// Requires the raw request body — see app.ts (express.raw before express.json).
+export const razorpayWebhookController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const signature = req.headers['x-razorpay-signature'];
+    if (typeof signature !== 'string' || !signature) {
+      throw new AppError('Missing webhook signature', 400);
+    }
+
+    const result = await PaymentService.handleRazorpayWebhook(
+      req.body as Buffer,
+      signature,
+    );
+
+    return res.status(200).json({
+      message: 'Webhook received',
+      status: 'success',
+      data: result,
+    });
+  },
+);
+
 export const listPaymentsController = asyncHandler(
   async (req: Request, res: Response) => {
     const result = await PaymentService.listPayments(requireUser(req));

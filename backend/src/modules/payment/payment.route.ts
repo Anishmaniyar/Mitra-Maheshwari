@@ -15,6 +15,19 @@ paymentRouter.post(
   PaymentController.createOrderController,
 );
 
+paymentRouter.post(
+  '/verify',
+  authenticate,
+  authorize('MEMBER'),
+  validateRequest(PaymentSchema.verifyPaymentSchema),
+  PaymentController.verifyPaymentController,
+);
+
+paymentRouter.post(
+  '/webhook/razorpay',
+  PaymentController.razorpayWebhookController,
+);
+
 paymentRouter.get(
   '/',
   authenticate,

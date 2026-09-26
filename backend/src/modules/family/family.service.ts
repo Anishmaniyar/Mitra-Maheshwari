@@ -1,9 +1,11 @@
 import crypto from 'node:crypto';
 import { pool } from '../../config/database.js';
+import { env } from '../../config/env.js';
 import { AppError } from '../../shared/errors/appError.js';
 import * as AuthRepository from '../auth/auth.repository.js';
 import * as RegistrationRepository from '../registration/registration.repository.js';
 import * as FamilyRepository from './family.repository.js';
+import * as PaymentRepository from '../payment/payment.repository.js';
 import type { CreateInvitationInput } from './family.schema.js';
 import type {
   AcceptInvitationInput,
@@ -37,7 +39,31 @@ export const getOwnFamily = async (memberId: string) => {
   }
   const members = await FamilyRepository.findFamilyMembers(requester.familyId);
 
-  return { family, members };
+  // Dashboard state: invitations visible to the head only; current-year
+  // membership derived from the latest application payment record.
+  const invitations = requester.isHead
+    ? await FamilyRepository.findInvitationsByFamilyId(requester.familyId)
+    : [];
+  const year = new Date().getFullYear();
+  const latestPayment =
+    await PaymentRepository.findLatestPaymentByFamilyAndYear(
+      requester.familyId,
+      year,
+    );
+
+  return {
+    family,
+    members,
+    invitations,
+    membership: {
+      year,
+      status: latestPayment?.status ?? null,
+      paymentId: latestPayment?.id ?? null,
+      amount: latestPayment?.amount ?? null,
+      feeAmount: Number(env.MEMBERSHIP_ANNUAL_FEE_AMOUNT),
+      currency: env.MEMBERSHIP_CURRENCY,
+    },
+  };
 };
 
 export const getFamilyMember = async (memberId: string, targetMemberId: string) => {
