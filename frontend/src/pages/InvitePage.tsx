@@ -64,7 +64,7 @@ export default function InvitePage() {
     setSending(true);
     setError(null);
     try {
-      await sendOtp({ memberId: "", mobile: digits });
+      await sendOtp({ memberId: "", mobile: digits, purpose: "INVITATION" });
       setMobile(digits);
       restart();
       setStep("code");
@@ -88,18 +88,17 @@ export default function InvitePage() {
     setVerifying(true);
     setError(null);
     try {
-      // A 404 here is the expected path: the number is verified (proof for
-      // acceptance) but has no account yet. A 200 means already registered.
-      await verifyOtp({ memberId: "", mobile, otp });
-      setError("This mobile number is already registered. Please log in instead.");
-    } catch (err) {
-      const status =
-        err instanceof Error && "status" in err ? (err as { status?: number }).status : undefined;
-      if (status === 404) {
+      // Explicit outcome: COMPLETE_REGISTRATION means the number is verified
+      // (proof for acceptance) but has no account yet. Anything else already
+      // has an account and belongs to login.
+      const outcome = await verifyOtp({ memberId: "", mobile, otp });
+      if (outcome.nextAction === "COMPLETE_REGISTRATION") {
         setStep("profile");
       } else {
-        setError(err instanceof Error ? err.message : "Verification failed. Please try again.");
+        setError("This mobile number is already registered. Please log in instead.");
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Verification failed. Please try again.");
     } finally {
       setVerifying(false);
     }

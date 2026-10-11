@@ -85,13 +85,21 @@ export const createOtp = async (input: {
   codeHash: string;
   expiresAt: Date;
   resendCount: number;
+  purpose?: string | null;
 }): Promise<OtpRecord> => {
   const result = await pool.query(
-    `INSERT INTO otps (member_id, mobile, code_hash, expires_at, resend_count)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO otps (member_id, mobile, code_hash, expires_at, resend_count, purpose)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING id, member_id, mobile, code_hash, expires_at, attempts,
                max_attempts, resend_count, last_sent_at, consumed_at`,
-    [input.memberId, input.mobile, input.codeHash, input.expiresAt, input.resendCount],
+    [
+      input.memberId,
+      input.mobile,
+      input.codeHash,
+      input.expiresAt,
+      input.resendCount,
+      input.purpose ?? null,
+    ],
   );
 
   return mapOtpRow(result.rows[0]);

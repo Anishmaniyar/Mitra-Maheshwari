@@ -13,7 +13,7 @@ export default defineConfig({
         name: "Mitra Maheshwari Seva Pratishthan",
         short_name: "Mitra Maheshwari",
         description: "Community membership and family services for the Mitra Maheshwari Seva Pratishthan.",
-        theme_color: "#8a2b2b",
+        theme_color: "#6e2638",
         background_color: "#faf8f5",
         display: "standalone",
         start_url: "/",

@@ -24,6 +24,12 @@ export interface RegistrationDetail {
     middleName: string | null;
     lastName: string | null;
     mobile: string | null;
+    bloodGroup: string | null;
+    age: number | null;
+    occupation: string | null;
+    area: string | null;
+    panName: string | null;
+    panNumber: string | null;
     isHead: boolean;
     status: string;
   }>;
@@ -36,6 +42,10 @@ export function listRegistrations(): Promise<{
   return api<{ items: PendingRegistration[]; total: number; limit: number; offset: number }>(
     "/admin/registrations",
   ).then((data) => ({ items: data.items, total: data.total }));
+}
+
+export function getRegistration(id: string): Promise<RegistrationDetail> {
+  return api<RegistrationDetail>(`/admin/registrations/${id}`);
 }
 
 export function approveRegistration(id: string): Promise<RegistrationDetail> {

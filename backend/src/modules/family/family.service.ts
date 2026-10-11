@@ -3,7 +3,7 @@ import { pool } from '../../config/database.js';
 import { env } from '../../config/env.js';
 import { AppError } from '../../shared/errors/appError.js';
 import * as AuthRepository from '../auth/auth.repository.js';
-import * as RegistrationRepository from '../registration/registration.repository.js';
+import { claimVerificationProof } from '../auth/otpChallenge.store.js';
 import * as FamilyRepository from './family.repository.js';
 import * as PaymentRepository from '../payment/payment.repository.js';
 import type { CreateInvitationInput } from './family.schema.js';
@@ -12,7 +12,11 @@ import type {
   UpdateFamilyMemberInput,
 } from './family.schema.js';
 
-const OTP_PROOF_WINDOW_MINUTES = 15;
+const isUniqueViolation = (error: unknown): boolean =>
+  typeof error === 'object' &&
+  error !== null &&
+  'code' in error &&
+  (error as { code: unknown }).code === '23505';
 
 const loadRequester = async (
   memberId: string,
@@ -209,12 +213,12 @@ export const acceptInvitation = async (
     );
   }
 
-  const proofSince = new Date(Date.now() - OTP_PROOF_WINDOW_MINUTES * 60 * 1000);
-  const proof = await RegistrationRepository.findRecentConsumedOtpByMobile(
-    input.mobile,
-    proofSince,
-  );
-  if (!proof) {
+  // Single-use, flow-bound proof: the invitee must have completed OTP
+  // verification for INVITATION within the proof window. The Redis proof is
+  // issued atomically at verify time and claimed here exactly once. A
+  // registration proof (or any already-claimed proof) is rejected here.
+  const proofClaimed = await claimVerificationProof(input.mobile, 'INVITATION');
+  if (!proofClaimed) {
     throw new AppError('Please verify your mobile number with an OTP first', 401);
   }
 
@@ -231,27 +235,43 @@ export const acceptInvitation = async (
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const member = await FamilyRepository.createFamilyMember(
-      {
-        familyId: invitation.familyId,
-        firstName: input.firstName,
-        middleName: input.middleName,
-        lastName: input.lastName,
-        mobile: input.mobile,
-        bloodGroup: input.bloodGroup,
-        age: input.age,
-        occupation: input.occupation,
-        area: input.area,
-        panName: input.panName,
-        panNumber: input.panNumber,
-      },
-      client,
-    );
-    await FamilyRepository.createMemberAccount(
-      { memberId: member.id, mobile: input.mobile },
-      client,
-    );
-    await FamilyRepository.acceptInvitation(invitation.id, client);
+    let member: { id: string; familyId: string };
+    try {
+      member = await FamilyRepository.createFamilyMember(
+        {
+          familyId: invitation.familyId,
+          firstName: input.firstName,
+          middleName: input.middleName,
+          lastName: input.lastName,
+          mobile: input.mobile,
+          bloodGroup: input.bloodGroup,
+          age: input.age,
+          occupation: input.occupation,
+          area: input.area,
+          panName: input.panName,
+          panNumber: input.panNumber,
+        },
+        client,
+      );
+      await FamilyRepository.createMemberAccount(
+        { memberId: member.id, mobile: input.mobile },
+        client,
+      );
+    } catch (error) {
+      // Lost a concurrent race (duplicate mobile): fail safe, roll back.
+      if (isUniqueViolation(error)) {
+        throw new AppError(
+          'This mobile number is already registered. Please log in',
+          409,
+        );
+      }
+      throw error;
+    }
+    // Conditional flip: concurrent accepts race here, exactly one wins.
+    const accepted = await FamilyRepository.acceptInvitation(invitation.id, client);
+    if (!accepted) {
+      throw new AppError('Invitation has already been accepted', 409);
+    }
     await client.query('COMMIT');
 
     return {

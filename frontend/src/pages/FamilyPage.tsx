@@ -96,7 +96,10 @@ export default function FamilyPage() {
           {addSuccess && <div className="notice notice--success" style={{ marginBottom: "var(--space-4)" }}>{addSuccess}</div>}
           {inviteLink && (
             <div className="notice notice--info" style={{ marginBottom: "var(--space-4)" }}>
-              Share this invitation link: {inviteLink}
+              Share this invitation link:{" "}
+              <a href={inviteLink} className="u-break">
+                {inviteLink}
+              </a>
             </div>
           )}
 

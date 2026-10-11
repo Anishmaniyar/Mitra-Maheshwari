@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { validateRequest } from '../../middleware/validate.middleware.js';
 import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
+import { paymentOrderUserLimiter } from '../../middleware/rateLimit.js';
 import * as PaymentSchema from './payment.schema.js';
 import * as PaymentController from './payment.controller.js';
 
@@ -11,6 +12,7 @@ paymentRouter.post(
   '/order',
   authenticate,
   authorize('MEMBER'),
+  paymentOrderUserLimiter,
   validateRequest(PaymentSchema.createOrderSchema),
   PaymentController.createOrderController,
 );
@@ -23,6 +25,9 @@ paymentRouter.post(
   PaymentController.verifyPaymentController,
 );
 
+// No user-facing rate limit here by design: legitimate provider retries
+// must never be blocked. Abuse protection is signature verification +
+// idempotent transitions, plus infrastructure-level controls.
 paymentRouter.post(
   '/webhook/razorpay',
   PaymentController.razorpayWebhookController,

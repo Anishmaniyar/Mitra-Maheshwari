@@ -9,7 +9,7 @@ export function FamilyMemberList({ members }: { members: FamilyMember[] }) {
         <div key={m.id} className="member-row">
           <div className="member-row__top">
             <span className="member-row__name">{fullName(m.firstName, m.middleName, m.lastName)}</span>
-            <div className="stack" style={{ gap: "var(--space-1)", flexDirection: "row", alignItems: "center" }}>
+            <div className="member-row__actions">
               {m.isHead && <span className="badge badge--neutral">Family head</span>}
               <StatusBadge status={m.isActiveMember ? "active" : "inactive"} />
             </div>

@@ -187,13 +187,14 @@ export const markInvitationExpired = async (id: string): Promise<void> => {
 export const acceptInvitation = async (
   id: string,
   client: PoolClient,
-): Promise<void> => {
-  await client.query(
+): Promise<boolean> => {
+  const result = await client.query(
     `UPDATE family_invitations
      SET status = 'ACCEPTED', accepted_at = now()
-     WHERE id = $1`,
+     WHERE id = $1 AND status = 'PENDING'`,
     [id],
   );
+  return (result.rowCount ?? 0) > 0;
 };
 
 export const createFamilyMember = async (

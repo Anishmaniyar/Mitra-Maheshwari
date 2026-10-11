@@ -9,7 +9,10 @@ export const generateOtp = (): string =>
   String(crypto.randomInt(100000, 1000000));
 
 export const hashOtp = (code: string): string =>
-  crypto.createHmac('sha256', env.JWT_SECRET).update(code).digest('hex');
+  crypto
+    .createHmac('sha256', env.OTP_HASH_SECRET ?? env.JWT_SECRET)
+    .update(code)
+    .digest('hex');
 
 export const verifyOtpHash = (code: string, expectedHash: string): boolean => {
   try {

@@ -2,10 +2,10 @@ import crypto from 'node:crypto';
 import { pool } from '../../config/database.js';
 import { AppError } from '../../shared/errors/appError.js';
 import * as AuthRepository from '../auth/auth.repository.js';
+import { claimVerificationProof } from '../auth/otpChallenge.store.js';
 import * as RegistrationRepository from './registration.repository.js';
 import type { CandidateQuery, CompleteRegistrationInput } from './registration.schema.js';
 
-const OTP_PROOF_WINDOW_MINUTES = 15;
 const FAMILY_CODE_RETRIES = 3;
 
 export interface CompletedRegistration {
@@ -45,12 +45,13 @@ export const findCandidates = async (query: CandidateQuery) => {
 export const completeRegistration = async (
   input: CompleteRegistrationInput,
 ): Promise<CompletedRegistration> => {
-  const proofSince = new Date(Date.now() - OTP_PROOF_WINDOW_MINUTES * 60 * 1000);
-  const proof = await RegistrationRepository.findRecentConsumedOtpByMobile(
-    input.mobile,
-    proofSince,
-  );
-  if (!proof) {
+  // Single-use, flow-bound proof: the mobile must have completed OTP
+  // verification for REGISTRATION within the proof window. The Redis proof
+  // is issued atomically at verify time and claimed here exactly once, so
+  // it cannot complete another registration or an invitation. A LOGIN proof
+  // (or any already-claimed proof) is rejected.
+  const proofClaimed = await claimVerificationProof(input.mobile, 'REGISTRATION');
+  if (!proofClaimed) {
     throw new AppError('Please verify your mobile number with an OTP first', 401);
   }
 
@@ -92,29 +93,42 @@ export const completeRegistration = async (
       throw new AppError('Could not create family. Please try again', 500);
     }
 
-    const member = await RegistrationRepository.createMember(
-      {
-        familyId: family.id,
-        firstName: input.firstName,
-        middleName: input.middleName,
-        lastName: input.lastName,
-        mobile: input.mobile,
-        bloodGroup: input.bloodGroup,
-        age: input.age,
-        occupation: input.occupation,
-        area: input.area,
-        panName: input.panName,
-        panNumber: input.panNumber,
-        isHead: true,
-        status: 'PENDING',
-      },
-      client,
-    );
+    let member: RegistrationRepository.CreatedMember;
+    let account: RegistrationRepository.CreatedAccount;
+    try {
+      member = await RegistrationRepository.createMember(
+        {
+          familyId: family.id,
+          firstName: input.firstName,
+          middleName: input.middleName,
+          lastName: input.lastName,
+          mobile: input.mobile,
+          bloodGroup: input.bloodGroup,
+          age: input.age,
+          occupation: input.occupation,
+          area: input.area,
+          panName: input.panName,
+          panNumber: input.panNumber,
+          isHead: true,
+          status: 'PENDING',
+        },
+        client,
+      );
 
-    const account = await RegistrationRepository.createAccount(
-      { memberId: member.id, mobile: input.mobile },
-      client,
-    );
+      account = await RegistrationRepository.createAccount(
+        { memberId: member.id, mobile: input.mobile },
+        client,
+      );
+    } catch (error) {
+      // Lost a concurrent double-submit (duplicate mobile): fail safe, roll back.
+      if (isUniqueViolation(error)) {
+        throw new AppError(
+          'This mobile number is already registered. Please log in',
+          409,
+        );
+      }
+      throw error;
+    }
 
     await client.query('COMMIT');
 

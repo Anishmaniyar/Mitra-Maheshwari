@@ -27,17 +27,32 @@ export interface NameCandidate {
   status: string;
 }
 
-export const findRecentConsumedOtpByMobile = async (
+/**
+ * Claims a single-use, flow-bound registration proof for a verified mobile.
+ * Atomically marks the freshest matching consumed OTP as used, so the proof
+ * works exactly once, for one mobile, in one flow. The outer `used_at IS NULL`
+ * guard makes concurrent claims safe: only one claimant wins the row.
+ */
+export const claimOtpProof = async (
   mobile: string,
+  purpose: string,
   since: Date,
 ): Promise<{ id: string } | null> => {
   const result = await pool.query(
-    `SELECT id
-     FROM otps
-     WHERE mobile = $1 AND consumed_at IS NOT NULL AND consumed_at >= $2
-     ORDER BY consumed_at DESC
-     LIMIT 1`,
-    [mobile, since],
+    `UPDATE otps SET used_at = now(), used_for = $3
+     WHERE id = (
+       SELECT id FROM otps
+       WHERE mobile = $1
+         AND consumed_at IS NOT NULL
+         AND consumed_at >= $2
+         AND used_at IS NULL
+         AND purpose = $4
+       ORDER BY consumed_at DESC
+       LIMIT 1
+     )
+     AND used_at IS NULL
+     RETURNING id`,
+    [mobile, since, purpose, purpose],
   );
 
   return result.rows[0] ? { id: result.rows[0].id as string } : null;

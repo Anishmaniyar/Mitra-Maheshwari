@@ -1,375 +1,354 @@
 import { Link } from "react-router-dom";
-import type { ReactNode } from "react";
 import { LpIcon, LP_PATHS } from "../components/common/LpIcon";
 import { Reveal } from "../components/common/Reveal";
 import { AppLayout } from "../components/layout/AppLayout";
 import { useCommunityStats } from "../hooks/useCommunityStats";
-import {
-  BloodMockup,
-  DashboardMockup,
-  DirectoryMockup,
-  FamilyMockup,
-  FloatBloodCard,
-  FloatMemberCard,
-  FloatMembershipCard,
-  FloatUpdateCard,
-  HeroStage,
-  MembershipMockup,
-  MiniBlood,
-  MiniFamily,
-  MiniMatrimony,
-  MiniMembership,
-  MiniNotifications,
-  MiniServices,
-  OnboardingMockup,
-  ServicesMockup,
-} from "../components/product/ProductMockups";
 
-/* Platform content (real capabilities only — no invented features) */
+/* ------------------------------------------------------------------ */
+/* Content — real capabilities from the app, grouped the way members   */
+/* actually use them. No invented features, figures or testimonials.   */
+/* ------------------------------------------------------------------ */
 
-const FEATURES = [
+type IconName = keyof typeof LP_PATHS;
+
+interface Capability {
+  icon: IconName;
+  name: string;
+  description: string;
+}
+
+interface CapabilityGroup {
+  icon: IconName;
+  title: string;
+  summary: string;
+  items: Capability[];
+}
+
+/** Three meaningful groups. Family connections lead; community support follows. */
+const CAPABILITY_GROUPS: CapabilityGroup[] = [
   {
     icon: "users",
-    title: "Family Management",
-    description: "Manage your family members and keep your community profile up to date.",
-    screen: <MiniFamily />,
+    title: "Family & Community",
+    summary: "Your family record, and the members around it.",
+    items: [
+      {
+        icon: "home",
+        name: "Family records",
+        description: "Keep your family's details together, verified and up to date.",
+      },
+      {
+        icon: "search",
+        name: "Member discovery",
+        description: "Find members and families across the community.",
+      },
+      {
+        icon: "heart",
+        name: "Matrimony",
+        description: "Explore suitable matrimonial profiles within the community.",
+      },
+    ],
   },
   {
     icon: "drop",
-    title: "Blood Support",
-    description: "Find matching blood donors within the community when help is needed.",
-    screen: <MiniBlood />,
+    title: "Support & Services",
+    summary: "Help close by, exactly when it is needed.",
+    items: [
+      {
+        icon: "drop",
+        name: "Blood donors",
+        description: "Find matching blood donors when someone needs help.",
+      },
+      {
+        icon: "briefcase",
+        name: "Community services",
+        description: "Discover businesses, professionals and services offered by members.",
+      },
+    ],
   },
   {
-    icon: "briefcase",
-    title: "Community Services",
-    description:
-      "Discover businesses, professionals and useful services offered by community members.",
-    screen: <MiniServices />,
+    icon: "bell",
+    title: "Stay Connected",
+    summary: "What is happening, and where you stand.",
+    items: [
+      {
+        icon: "bell",
+        name: "Events & announcements",
+        description: "Follow community gatherings, activities and updates.",
+      },
+      {
+        icon: "card",
+        name: "Membership & payments",
+        description: "Manage your annual membership and review your payment history.",
+      },
+    ],
+  },
+];
+
+/** What members can do from the family records screen. */
+const ACTION_BADGES = [
+  { icon: "home", label: "Family summary" },
+  { icon: "card", label: "Membership status" },
+  { icon: "user", label: "Member details" },
+] as const;
+
+/** Registration order, kept short — no technical detail. */
+const JOINING_STEPS = [
+  {
+    title: "Enter your details",
+    description: "Add your name and details, then verify your mobile number.",
   },
   {
-    icon: "heart",
-    title: "Matrimony",
-    description: "Explore suitable matrimonial profiles within the community.",
-    screen: <MiniMatrimony />,
+    title: "Complete your family profile",
+    description: "Add your family members and keep their details accurate.",
   },
   {
-    icon: "card",
-    title: "Membership",
-    description: "Manage your annual community membership and payments securely.",
-    screen: <MiniMembership />,
+    title: "Submit for approval",
+    description: "Your registration is reviewed before your family record goes live.",
   },
 ] as const;
 
-const HIGHLIGHT_POINTS = [
-  {
-    title: "Family Connections",
-    description: "Keep your family information organized.",
-    screen: <MiniFamily />,
-  },
-  {
-    title: "Community Support",
-    description: "Find help when your community needs it.",
-    screen: <MiniBlood />,
-  },
-  {
-    title: "Trusted Services",
-    description: "Discover professionals and businesses within the community.",
-    screen: <MiniServices />,
-  },
-  {
-    title: "Community Updates",
-    description: "Stay informed with announcements and updates.",
-    screen: <MiniNotifications />,
-  },
-] as const;
+/* ------------------------------------------------------------------ */
+/* Live community counters — real data, never invented figures.        */
+/* ------------------------------------------------------------------ */
 
-/* Real community counters from GET /api/stats — no placeholder figures. */
 const STAT_ORDER = [
   { key: "families", label: "Families" },
   { key: "members", label: "Members" },
-  { key: "bloodGroupsRecorded", label: "Blood Groups Recorded" },
+  { key: "bloodGroupsRecorded", label: "Blood groups recorded" },
 ] as const;
 
 const numberFormat = new Intl.NumberFormat("en-IN");
 
-const STEPS = [
-  {
-    n: "01",
-    title: "Find Your Record",
-    description: "Enter your details to find your existing community record.",
-  },
-  {
-    n: "02",
-    title: "Verify With OTP",
-    description: "Verify your mobile number with a secure one-time code.",
-  },
-  {
-    n: "03",
-    title: "Access & Connect",
-    description: "Manage your family and explore the community platform.",
-  },
-] as const;
-
-const VALUES = [
-  { eyebrow: "Connect", description: "Bringing families together." },
-  { eyebrow: "Support", description: "Helping each other when it matters." },
-  { eyebrow: "Celebrate", description: "Keeping our culture and traditions alive." },
-  { eyebrow: "Serve", description: "Creating a positive impact together." },
-] as const;
-
 /**
- * Live counters read from the database. The band exists only to show real
- * numbers, so it renders a short skeleton while loading and removes itself if
- * the request fails.
+ * The hero's "at a glance" panel. Figures come from GET /api/stats and are
+ * shown as they arrive; on failure the panel simply drops the figure rows and
+ * keeps its heading and link, so nothing breaks and nothing is faked.
  */
-function StatsBand() {
+function CommunityGlance() {
   const state = useCommunityStats();
 
-  // Nothing to publish yet (or the request failed) — show no band at all
-  // rather than a row of zeros.
-  if (state.status === "error") return null;
-  if (
-    state.status === "ready" &&
-    state.stats.families + state.stats.members + state.stats.bloodGroupsRecorded === 0
-  ) {
-    return null;
-  }
-
   return (
-    <section className="home-stats" aria-label="Community in numbers">
-      <div className="container">
-        <Reveal className="home-stats__row">
+    <aside className="landing-glance">
+      <span className="landing-glance__label">Community at a glance</span>
+      <h2 className="landing-glance__title">Our community today</h2>
+
+      {state.status !== "error" && (
+        <dl className="landing-glance__figures">
           {STAT_ORDER.map((stat) => (
-            <div key={stat.key} className="home-stat" data-stat={stat.key}>
-              {state.status === "ready" ? (
-                <div className="home-stat__value">{numberFormat.format(state.stats[stat.key])}</div>
-              ) : (
-                <div className="home-stat__value home-stat__value--pending">
-                  <span className="home-stat__skeleton" aria-hidden="true" />
-                </div>
-              )}
-              <div className="home-stat__label">{stat.label}</div>
+            <div key={stat.key} className="landing-glance__figure" data-stat={stat.key}>
+              <dt>{stat.label}</dt>
+              <dd>
+                {state.status === "ready" ? (
+                  numberFormat.format(state.stats[stat.key])
+                ) : (
+                  <span className="landing-glance__skeleton" aria-hidden="true" />
+                )}
+              </dd>
             </div>
           ))}
-        </Reveal>
-      </div>
-    </section>
+        </dl>
+      )}
+
+      <p className="landing-glance__note">
+        Counts are read live from the community register.
+      </p>
+      <Link to="/community" className="landing-glance__link">
+        Explore the community <span aria-hidden="true">→</span>
+      </Link>
+    </aside>
   );
 }
 
-/* Alternate full product screens for the feature showcase rows. */
-const SCREENSHOTS: Record<string, ReactNode> = {
-  "Blood Support": <BloodMockup />,
-  "Community Services": <ServicesMockup />,
-  Membership: <MembershipMockup />,
-};
-
 /* ------------------------------------------------------------------ */
-/* Page                                                               */
+/* Page — five purposeful sections                                     */
 /* ------------------------------------------------------------------ */
 
 export default function LandingPage() {
   return (
     <AppLayout variant="public">
-      <div className="lp home">
-        {/* ============ HERO ============ */}
-        <section className="home-hero">
-          <div className="container home-hero__intro">
-            <span className="home-eyebrow">A Stronger Community Together</span>
-            <h1 className="home-display">
-              One community.
-              <br />
-              Many connections.
-            </h1>
-            <p className="home-lead">
-              A digital home for Mitra Maheshwari families to connect, support one another,
-              discover community services and stay involved.
-            </p>
-            <div className="home-cta">
-              <Link to="/register" className="btn btn--primary btn--lg">
-                Join the Community <span aria-hidden="true">→</span>
-              </Link>
-              <a href="#programs" className="btn btn--secondary btn--lg">
-                Explore the Platform
-              </a>
-            </div>
-            <ul className="home-trust" aria-label="Platform value">
-              <li>
-                <LpIcon d={LP_PATHS.users} label="" /> Family Connections
-              </li>
-              <li>
-                <LpIcon d={LP_PATHS.heart} label="" /> Community Support
-              </li>
-              <li>
-                <LpIcon d={LP_PATHS.spark} label="" /> Shared Opportunities
-              </li>
-            </ul>
-          </div>
-
-          <div className="container home-hero__stage">
-            <HeroStage
-              screen={<DashboardMockup />}
-              floats={[
-                <FloatMemberCard key="member" />,
-                <FloatMembershipCard key="membership" />,
-                <FloatBloodCard key="blood" />,
-                <FloatUpdateCard key="update" />,
-              ]}
-            />
-          </div>
-        </section>
-
-        {/* ============ FEATURES ============ */}
-        <section className="home-section" id="programs">
-          <div className="container">
-            <Reveal className="home-head home-head--center">
-              <span className="home-eyebrow">Everything Your Community Needs</span>
-              <h2 className="home-h2">All in One Place</h2>
-              <p className="home-sub">
-                From family connections to community support, Mitra Maheshwari brings the
-                essential parts of community life together in one simple platform.
+      <div className="lp home landing">
+        {/* ============ 1 · HERO — what is Mitra Maheshwari? ============ */}
+        <section className="landing-hero">
+          <div className="container landing-hero__grid">
+            <Reveal className="landing-hero__copy">
+              <span className="home-eyebrow">Mitra Maheshwari Seva Pratishthan</span>
+              <h1 className="home-display">
+                Closer families. A <em>stronger community.</em>
+              </h1>
+              <p className="home-lead">
+                Mitra Maheshwari brings family connections, community support and essential
+                community services together in one place — a member-verified home for our
+                community.
               </p>
-              <Link to="/programs" className="home-link">
-                View All Features <span aria-hidden="true">→</span>
-              </Link>
+              <div className="home-cta landing-hero__cta">
+                <Link to="/register" className="btn btn--primary btn--lg">
+                  Join the Community <span aria-hidden="true">→</span>
+                </Link>
+                <Link to="/login" className="btn btn--secondary btn--lg">
+                  Member Login
+                </Link>
+              </div>
+              <ul className="landing-assure">
+                <li>
+                  <LpIcon d={LP_PATHS.check} label="" />
+                  Records reviewed before they go live
+                </li>
+                <li>
+                  <LpIcon d={LP_PATHS.check} label="" />
+                  Family details stay members-only
+                </li>
+              </ul>
             </Reveal>
 
-            <Reveal className="home-features" delay={80}>
-              {FEATURES.map((feature) => (
-                <article key={feature.title} className="home-feature">
-                  <div className="home-feature__screen">{feature.screen}</div>
-                  <div className="home-feature__body">
-                    <span className="home-feature__eyebrow">
-                      <LpIcon d={LP_PATHS[feature.icon]} label="" />
-                      {feature.title}
-                    </span>
-                    <p>{feature.description}</p>
-                  </div>
-                </article>
-              ))}
+            <Reveal className="landing-hero__aside" delay={120}>
+              <CommunityGlance />
             </Reveal>
           </div>
         </section>
 
-        {/* ============ SHOWCASE — COMMUNITY ============ */}
-        <section className="home-section home-section--soft" id="community">
+        {/* ============ 2 · WHAT YOU CAN DO HERE ============ */}
+        <section className="landing-band landing-band--tint">
           <div className="container">
-            <Reveal className="home-showcase">
-              <div className="home-showcase__copy">
-                <span className="home-eyebrow">Built for Our Community</span>
-                <h2 className="home-h2">More Than a Directory.</h2>
+            <Reveal className="landing-head">
+              <span className="home-eyebrow">What you can do here</span>
+              <h2 className="home-h2">
+                One platform for <em>community life.</em>
+              </h2>
+              <p className="home-sub">
+                The essentials members rely on, grouped simply: your family, the support our
+                community offers, and the updates that keep everyone connected.
+              </p>
+            </Reveal>
+
+            <div className="landing-cards">
+              {CAPABILITY_GROUPS.map((group, index) => (
+                <Reveal key={group.title} delay={index * 90}>
+                  <article className="landing-card">
+                    <span className="landing-card__icon" aria-hidden="true">
+                      <LpIcon d={LP_PATHS[group.icon]} label="" />
+                    </span>
+                    <h3 className="landing-card__title">{group.title}</h3>
+                    <p className="landing-card__summary">{group.summary}</p>
+                    <ul className="landing-card__items">
+                      {group.items.map((item) => (
+                        <li key={item.name} className="landing-card__item">
+                          <LpIcon d={LP_PATHS[item.icon]} label="" />
+                          <span>
+                            <span className="landing-card__name">{item.name}</span>
+                            <span className="landing-card__text">{item.description}</span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ============ 3 · SEE THE PLATFORM IN ACTION ============ */}
+        <section className="landing-band">
+          <div className="container">
+            <Reveal className="landing-action">
+              <div className="landing-action__copy">
+                <span className="home-eyebrow">See the platform in action</span>
+                <h2 className="home-h2">
+                  Your family, <em>in your hands.</em>
+                </h2>
                 <p className="home-sub">
-                  Mitra Maheshwari brings families, services, support and community activities
-                  together in one connected digital experience.
+                  Members manage their family information in one place — adding family members,
+                  keeping details current, and reaching every other community feature from the
+                  same member area.
+                </p>
+                <ul className="landing-badges">
+                  {ACTION_BADGES.map((badge) => (
+                    <li key={badge.label} className="landing-badge">
+                      <LpIcon d={LP_PATHS[badge.icon]} label="" />
+                      {badge.label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="landing-stack">
+                <figure className="landing-stack__frame landing-stack__frame--main">
+                  <img
+                    src="/images/hero-dashboard.png"
+                    alt="The Mitra Maheshwari member area, showing the family summary, membership status and quick actions"
+                    width={1422}
+                    height={904}
+                    loading="lazy"
+                  />
+                </figure>
+                <figure className="landing-stack__frame landing-stack__frame--inset">
+                  <img
+                    src="/images/hero-family.png"
+                    alt="Family records inside the Mitra Maheshwari member area, listing the head of the family and its members"
+                    width={1422}
+                    height={804}
+                    loading="lazy"
+                  />
+                </figure>
+                <p className="landing-stack__caption">
+                  Family records and membership status in the live member area.
                 </p>
               </div>
-              <div className="home-showcase__visual">
-                <FamilyMockup />
-                <div className="home-showcase__aside">
-                  <DirectoryMockup />
-                </div>
-              </div>
-            </Reveal>
-
-            <Reveal className="home-grid-2x2" delay={80}>
-              {HIGHLIGHT_POINTS.map((point) => (
-                <article key={point.title} className="home-tile">
-                  <div className="home-tile__screen">{point.screen}</div>
-                  <div className="home-tile__body">
-                    <span className="home-tile__eyebrow">{point.title}</span>
-                    <p>{point.description}</p>
-                  </div>
-                </article>
-              ))}
             </Reveal>
           </div>
         </section>
 
-        {/* ============ SHOWCASE — PRODUCT SCREENS ============ */}
-        <section className="home-section" id="platform">
-          <div className="container home-rows">
-            {FEATURES.filter((feature) => feature.title in SCREENSHOTS).map((feature, i) => (
-              <Reveal
-                key={feature.title}
-                className={`home-row${i % 2 === 1 ? " is-reversed" : ""}`}
-              >
-                <div className="home-row__visual">{SCREENSHOTS[feature.title]}</div>
-                <div className="home-row__copy">
-                  <span className="home-eyebrow">{feature.title}</span>
-                  <h2 className="home-h3">{feature.description}</h2>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </section>
-
-        {/* ============ STATS (live counters) ============ */}
-        <StatsBand />
-
-        {/* ============ HOW IT WORKS ============ */}
-        <section className="home-section home-section--soft" id="join">
+        {/* ============ 4 · HOW TO BECOME A MEMBER ============ */}
+        <section className="landing-band landing-band--tint">
           <div className="container">
-            <Reveal className="home-head home-head--center">
-              <span className="home-eyebrow">Get Started in Three Simple Steps</span>
-              <h2 className="home-h2">Join Your Community</h2>
+            <Reveal className="landing-head">
+              <span className="home-eyebrow">How to become a member</span>
+              <h2 className="home-h2">
+                Joining takes <em>three steps.</em>
+              </h2>
+              <p className="home-sub">
+                Registration takes only a few minutes. Every family record is reviewed before
+                it joins the community.
+              </p>
             </Reveal>
 
-            <Reveal className="home-steps" delay={80}>
-              <div className="home-steps__visual">
-                <OnboardingMockup />
-              </div>
-              <ol className="home-steps__list">
-                {STEPS.map((step) => (
-                  <li key={step.n} className="home-step">
-                    <span className="home-step__n" aria-hidden="true">
-                      {step.n}
+            <ol className="landing-steps">
+              {JOINING_STEPS.map((step, index) => (
+                <Reveal key={step.title} delay={index * 90}>
+                  <li className="landing-step">
+                    <span className="landing-step__n" aria-hidden="true">
+                      {String(index + 1).padStart(2, "0")}
                     </span>
-                    <div className="home-step__body">
-                      <h3>{step.title}</h3>
-                      <p>{step.description}</p>
-                    </div>
+                    <h3 className="landing-step__title">{step.title}</h3>
+                    <p className="landing-step__text">{step.description}</p>
                   </li>
-                ))}
-              </ol>
-            </Reveal>
-
-            <Reveal className="home-head--center home-cta--center">
-              <Link to="/register" className="btn btn--primary btn--lg">
-                Find My Record <span aria-hidden="true">→</span>
-              </Link>
-            </Reveal>
-          </div>
-        </section>
-
-        {/* ============ COMMUNITY VALUES ============ */}
-        <section className="home-section" id="about">
-          <div className="container">
-            <Reveal className="home-head home-head--center">
-              <span className="home-eyebrow">Our Philosophy</span>
-              <h2 className="home-h2">Built Around Community</h2>
-            </Reveal>
-
-            <Reveal className="home-values" delay={80}>
-              {VALUES.map((value) => (
-                <article key={value.eyebrow} className="home-value">
-                  <span className="home-value__eyebrow">{value.eyebrow}</span>
-                  <p>{value.description}</p>
-                </article>
+                </Reveal>
               ))}
-            </Reveal>
+            </ol>
           </div>
         </section>
 
-        {/* ============ FINAL CTA ============ */}
-        <section className="home-final">
-          <div className="container">
-            <Reveal className="home-final__panel">
-              <span className="home-final__eyebrow">Your Community, Connected in One Place</span>
-              <h2>Stay connected with your community.</h2>
-              <p>Join a growing network of families building a stronger, more connected community.</p>
+        {/* ============ 5 · FINAL INVITATION ============ */}
+        <section className="landing-invite">
+          <div className="container landing-invite__inner">
+            <Reveal>
+              <h2>
+                Stay connected with <em>your community.</em>
+              </h2>
+              <p>
+                Join the platform and keep your family close to the people, support and services
+                around you.
+              </p>
+            </Reveal>
+            <Reveal className="landing-invite__actions" delay={90}>
               <Link to="/register" className="btn btn--light btn--lg">
                 Join the Community <span aria-hidden="true">→</span>
+              </Link>
+              <Link to="/login" className="btn btn--outline btn--lg">
+                Member Login
+              </Link>
+              <Link to="/contact" className="landing-invite__contact">
+                Questions about joining? Contact the community team
               </Link>
             </Reveal>
           </div>

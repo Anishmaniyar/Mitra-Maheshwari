@@ -10,17 +10,17 @@
   /* ---- Color: backgrounds & surfaces ----------------------- */
   --color-background: #faf8f5; /* warm off-white */
   --color-surface: #ffffff;
-  --color-surface-muted: #f3efe9;
+  --color-surface-muted: #f4f0ea;
 
   /* ---- Color: text ---------------------------------------- */
-  --color-text: #2a2521; /* dark warm charcoal */
-  --color-text-muted: #6d655d;
+  --color-text: #29272a; /* charcoal */
+  --color-text-muted: #77716f; /* muted gray */
   --color-text-inverse: #ffffff;
 
-  /* ---- Color: primary brand (deep maroon) ------------------ */
-  --color-primary: #8a2b2b;
-  --color-primary-dark: #6f2020;
-  --color-primary-soft: #f6ebe7;
+  /* ---- Color: primary brand (deep wine) -------------------- */
+  --color-primary: #6e2638;
+  --color-primary-dark: #571e2d;
+  --color-primary-soft: #f5e9e6;
 
   /* ---- Color: status -------------------------------------- */
   --color-success: #2f6b3d;
@@ -33,11 +33,14 @@
   --color-info-soft: #e8f0f7;
 
   /* ---- Color: borders -------------------------------------- */
-  --color-border: #e7e0d8;
-  --color-border-strong: #d3cac0;
+  --color-border: #eae4de; /* light border */
+  --color-border-strong: #dcd4cc;
 
   /* ---- Typography ------------------------------------------ */
   --font-family: "Inter", -apple-system, "Segoe UI", system-ui, sans-serif;
+  /* Editorial display serif (system stack — no downloads, works offline). */
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
+    "Times New Roman", serif;
   --font-weight-regular: 400;
   --font-weight-bold: 700;
   /* Headings use one weight and one tracking everywhere — the same treatment
@@ -67,12 +70,12 @@
   /* ---- Radii ------------------------------------------------ */
   --radius-sm: 8px;
   --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-lg: 14px;
 
   /* ---- Shadows (used sparingly, only for hierarchy) -------- */
-  --shadow-sm: 0 1px 2px rgb(42 37 33 / 0.05);
-  --shadow-md: 0 2px 16px rgb(42 37 33 / 0.08);
-  --shadow-btn: 0 1px 2px rgb(138 43 43 / 0.35);
+  --shadow-sm: 0 1px 2px rgb(41 39 42 / 0.05);
+  --shadow-md: 0 1px 2px rgb(41 39 42 / 0.05), 0 12px 28px -20px rgb(41 39 42 / 0.14);
+  --shadow-btn: 0 1px 2px rgb(110 38 56 / 0.35);
 
   /* ---- Layout ----------------------------------------------- */
   --container-max: 72rem;
@@ -200,7 +203,7 @@ img {
 .surface {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 16px;
+  border-radius: 14px;
   box-shadow: var(--app-shadow, var(--shadow-sm));
   overflow: hidden;
 }
@@ -749,6 +752,12 @@ img {
   .menu-toggle {
     display: none;
   }
+
+  /* Resizing up while the mobile menu is open must not leave it on screen. */
+  .mobile-nav,
+  .mobile-nav.is-open {
+    display: none;
+  }
 }
 
 /* Authenticated header: avatar + greeting chip */
@@ -827,10 +836,14 @@ img {
 .site-footer a {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+  transition: color 0.15s ease;
 }
 
 .site-footer a:hover {
   color: var(--color-primary);
+  /* Understated underline: hairline, set off from the text. */
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
 }
 
 .site-footer__copyright {
@@ -863,7 +876,7 @@ img {
   gap: var(--space-2);
   padding: clamp(1.1rem, 1.8vw, 1.4rem);
   border: 1px solid var(--color-border);
-  border-radius: 16px;
+  border-radius: 14px;
   background-color: var(--color-surface);
   box-shadow: var(--app-shadow, var(--shadow-sm));
   text-align: left;
@@ -1060,10 +1073,10 @@ img {
 
 .lp {
   --lp-max: 80rem; /* ~1280px */
-  --lp-blush: #faf1ef;
-  --lp-blush-border: #f0ddd9;
-  --lp-ink: #211d1a;
-  background: var(--color-surface);
+  --lp-blush: #f7ece9;
+  --lp-blush-border: #eae4de;
+  --lp-ink: #29272a;
+  background: var(--color-background);
   color: var(--lp-ink);
 }
 
@@ -1154,23 +1167,24 @@ img {
 .home {
   /* Mockup surface tokens — remapped once for dark mode. */
   --hm-surface: #ffffff;
-  --hm-surface-2: #fbf8f6;
-  --hm-surface-3: #f6f2ee;
-  --hm-line: #e8e1d9;
-  --hm-line-strong: #ddd3c9;
-  --hm-ink: #221e1b;
-  --hm-muted: #6d655d;
+  --hm-surface-2: #fdfcfa;
+  --hm-surface-3: #f7f4f0;
+  --hm-line: #eae4de;
+  --hm-line-strong: #dcd4cc;
+  --hm-ink: #29272a;
+  --hm-muted: #77716f;
 
-  --home-ink: #1c1917;
-  --home-body: #57504a;
-  --home-muted: #8b8178;
-  --home-line: #e8e1d9;
-  --home-soft: #faf8f6;
-  --home-radius: 20px;
-  --home-shadow: 0 1px 2px rgb(42 37 33 / 0.04), 0 18px 40px -24px rgb(42 37 33 / 0.18);
-  --home-shadow-lg: 0 2px 6px rgb(42 37 33 / 0.04), 0 40px 80px -32px rgb(42 37 33 / 0.28);
+  --home-ink: #29272a;
+  --home-body: #575350;
+  --home-muted: #77716f;
+  --home-line: #eae4de;
+  /* One warm tint deeper than the page base, for alternating bands. */
+  --home-soft: #f3efea;
+  --home-radius: 12px;
+  --home-shadow: 0 1px 2px rgb(41 39 42 / 0.04), 0 12px 28px -20px rgb(41 39 42 / 0.16);
+  --home-shadow-lg: 0 1px 3px rgb(41 39 42 / 0.05), 0 24px 48px -24px rgb(41 39 42 / 0.22);
 
-  background: #fff;
+  background: var(--color-background);
   color: var(--home-ink);
 }
 
@@ -1196,24 +1210,36 @@ img {
   flex: none;
 }
 
-/* Hero heading — one scale for every page: 60px / 60px, medium weight. */
+/* Display headings — editorial serif for headlines, Inter for everything
+   else. One scale for every public page so the whole site reads with one
+   voice. The wine italic accent is reserved for a single phrase per heading. */
+.home-display,
+.home-h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+/* Hero heading — one scale for every page. */
 .home-display {
   margin: 1.25rem 0 0;
-  font-size: clamp(2.25rem, 4.4vw, 3.75rem);
-  font-weight: var(--font-weight-heading);
-  line-height: 1;
-  letter-spacing: -0.03em;
-  max-width: 26ch;
+  font-size: clamp(2.5rem, 4.6vw, 3.9rem);
+  max-width: 22ch;
 }
 
 /* Section heading — the hero's treatment, one step down in size so the hero
-   still leads: medium weight, tight tracking, tight leading. */
+   still leads. */
 .home-h2 {
   margin: 1rem 0 0;
-  font-size: clamp(1.75rem, 4vw, 3.25rem);
-  font-weight: var(--font-weight-heading);
-  letter-spacing: -0.03em;
-  line-height: 1;
+  font-size: clamp(1.9rem, 3.8vw, 3rem);
+}
+
+.home-display em,
+.home-h2 em {
+  font-style: italic;
+  color: var(--color-primary);
 }
 
 .home-h3 {
@@ -1269,7 +1295,12 @@ img {
   overflow: hidden;
   padding: clamp(3rem, 6.5vw, 6rem) 0 0;
   border-bottom: 1px solid var(--home-line);
-  background: linear-gradient(180deg, #fff 0%, #fff 55%, var(--home-soft) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-background) 0%,
+    var(--color-background) 55%,
+    var(--home-soft) 100%
+  );
 }
 
 .home-hero__intro {
@@ -1405,7 +1436,7 @@ img {
 /* ---------- Section rhythm ---------- */
 
 .home-section {
-  padding: clamp(4rem, 8vw, 7.5rem) 0;
+  padding: clamp(3rem, 6vw, 5rem) 0;
 }
 
 .home-section--soft {
@@ -1425,11 +1456,6 @@ img {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.home-cta--center {
-  text-align: center;
-  margin-top: clamp(2.5rem, 4vw, 3.5rem);
 }
 
 /* ---------- Feature grid (mini product screens) ---------- */
@@ -1501,6 +1527,62 @@ img {
   color: var(--home-body);
   font-size: 0.95rem;
   line-height: 1.65;
+}
+
+/* ---------- Compact feature panels (landing): thin border, small radius,
+   one icon + one sentence each. No mockups, no shadows, no hover lift. ---- */
+
+.home-feature-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+@media (min-width: 760px) {
+  .home-feature-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.home-feature-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  background: #fff;
+  border: 1px solid var(--home-line);
+  border-radius: var(--home-radius);
+  padding: 1.15rem 1.25rem;
+}
+
+.home-feature-item__icon {
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.home-feature-item__icon .lp-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.home-feature-item__body h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.home-feature-item__body p {
+  margin: 0.3rem 0 0;
+  color: var(--home-body);
+  font-size: 0.92rem;
+  line-height: 1.6;
 }
 
 /* ---------- Large product showcase ---------- */
@@ -1646,7 +1728,7 @@ img {
 
 .home-stats {
   padding: clamp(2.75rem, 5vw, 4.5rem) 0;
-  background: #fff;
+  background: var(--color-background);
   border-top: 1px solid var(--home-line);
 }
 
@@ -1742,7 +1824,7 @@ img {
   padding: 1.15rem 1.3rem;
   background: #fff;
   border: 1px solid var(--home-line);
-  border-radius: 16px;
+  border-radius: 14px;
   box-shadow: var(--home-shadow);
 }
 
@@ -1799,7 +1881,7 @@ img {
   padding: 1.5rem 1.5rem 1.6rem;
   background: #fff;
   border: 1px solid var(--home-line);
-  border-radius: 16px;
+  border-radius: 14px;
   box-shadow: var(--home-shadow);
 }
 
@@ -1957,7 +2039,7 @@ img {
 
 .home-final {
   padding: clamp(3rem, 6vw, 5rem) 0;
-  background: #fff;
+  background: var(--color-background);
 }
 
 .home-final__panel {
@@ -2293,7 +2375,7 @@ img {
   border-radius: 0.5em;
   background: var(--color-primary-soft);
   color: var(--color-primary);
-  box-shadow: inset 0 0 0 1px rgb(138 43 43 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(110 38 56 / 0.1);
 }
 
 .hm-tile__icon .lp-icon {
@@ -2749,7 +2831,7 @@ img {
   height: 2em;
   color: var(--color-primary);
   background: var(--color-primary-soft);
-  box-shadow: inset 0 0 0 1px rgb(138 43 43 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(110 38 56 / 0.1);
   border-radius: 0.55em;
 }
 
@@ -2784,7 +2866,7 @@ img {
   background: var(--hm-surface);
   border: 1px solid var(--hm-line);
   border-radius: 0.95em;
-  box-shadow: 0 20px 45px -22px rgb(42 37 33 / 0.4), 0 1px 2px rgb(42 37 33 / 0.05);
+  box-shadow: 0 12px 28px -20px rgb(41 39 42 / 0.22), 0 1px 2px rgb(41 39 42 / 0.05);
 }
 
 .hm-float__body {
@@ -2813,7 +2895,7 @@ img {
   background: var(--hm-surface);
   border: 1px solid var(--hm-line);
   border-radius: 0.95em;
-  box-shadow: 0 14px 30px -20px rgb(42 37 33 / 0.32);
+  box-shadow: 0 10px 24px -18px rgb(41 39 42 / 0.2);
 }
 
 .hm-mini__head {
@@ -2963,6 +3045,615 @@ img {
 
   .home-cta .btn {
     width: 100%;
+  }
+}
+
+/* ============================================================
+   LANDING PAGE — five purposeful sections.
+   A self-contained visual system scoped to `.landing`: its own
+   surface tokens so light and dark each get a considered
+   treatment, alternating white and warm-ivory bands, refined
+   cards with one quiet lift on hover, layered product shots,
+   and a single wine surface to close. The composition is not
+   shared with the other public pages, which keep the `home-`
+   editorial rhythm.
+   ============================================================ */
+
+.landing {
+  /* Bands */
+  --landing-surface: #ffffff; /* white band */
+  --landing-tint: #faf8f5; /* warm ivory band */
+  /* Cards */
+  --landing-card: #ffffff;
+  --landing-card-tint: #faf8f5;
+  --landing-line: #eae4de;
+  --landing-line-strong: #dcd4cc;
+  /* Type */
+  --landing-ink: #29272a;
+  --landing-body: #575350;
+  --landing-muted: #77716f;
+  /* Wine accent */
+  --landing-accent: #6e2638;
+  --landing-accent-soft: #f5e9e6;
+  --landing-invite-bg: #6e2638;
+  --landing-invite-ink: #ffffff;
+  --landing-invite-muted: #e9d2cd;
+  --landing-invite-em: #f6cfc7;
+  /* Elevation — used only on cards and framed screenshots */
+  --landing-lift: 0 1px 2px rgb(41 39 42 / 0.04), 0 14px 30px -20px rgb(41 39 42 / 0.2);
+  --landing-lift-strong: 0 1px 3px rgb(41 39 42 / 0.06), 0 30px 55px -28px rgb(41 39 42 / 0.3);
+  --landing-skeleton: #e6dfd8;
+
+  background: var(--landing-surface);
+  color: var(--landing-ink);
+}
+
+/* ---------- Section bands: white → ivory → white → ivory → wine ---------- */
+
+.landing-band {
+  padding: clamp(3.5rem, 6.5vw, 5.5rem) 0;
+  background: var(--landing-surface);
+}
+
+.landing-band--tint {
+  background: var(--landing-tint);
+  border-block: 1px solid var(--landing-line);
+}
+
+.landing-head {
+  max-width: 44rem;
+}
+
+/* ---------- 1 · Hero: copy-led, no imagery ---------- */
+
+.landing-hero {
+  padding: clamp(3rem, 6vw, 5rem) 0 clamp(3.5rem, 6.5vw, 5.5rem);
+  background: var(--landing-surface);
+  border-bottom: 1px solid var(--landing-line);
+}
+
+.landing-hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(2.25rem, 4.5vw, 3.5rem);
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .landing-hero__grid {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(2.5rem, 5vw, 4.5rem);
+  }
+}
+
+.landing-hero__copy,
+.landing-hero__aside {
+  min-width: 0;
+}
+
+.landing-hero .home-display {
+  max-width: 20ch;
+}
+
+.landing-hero .home-lead {
+  max-width: 34rem;
+}
+
+.landing-hero__cta {
+  justify-content: flex-start;
+}
+
+/* Two quiet assurances under the hero actions. */
+.landing-assure {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1.5rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+}
+
+.landing-assure li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--landing-muted);
+}
+
+.landing-assure .lp-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--landing-accent);
+}
+
+/* ---------- Hero panel: live community figures ---------- */
+
+.landing-glance {
+  padding: clamp(1.35rem, 2.6vw, 1.85rem);
+  background: var(--landing-card-tint);
+  border: 1px solid var(--landing-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--landing-lift);
+}
+
+.landing-glance__label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--landing-muted);
+}
+
+.landing-glance__title {
+  margin: 0.7rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.3vw, 1.7rem);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  line-height: 1.15;
+  color: var(--landing-ink);
+}
+
+.landing-glance__figures {
+  margin: 1.35rem 0 0;
+  border-top: 1px solid var(--landing-line);
+}
+
+.landing-glance__figure {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--landing-line);
+}
+
+.landing-glance__figure dt {
+  font-size: 0.9rem;
+  color: var(--landing-body);
+}
+
+.landing-glance__figure dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  line-height: 1.1;
+  color: var(--landing-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Skeleton shown while the real counters load. */
+.landing-glance__skeleton {
+  display: block;
+  width: 2.75rem;
+  height: 1.25rem;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--landing-line) 25%,
+    var(--landing-skeleton) 37%,
+    var(--landing-line) 63%
+  );
+  background-size: 400% 100%;
+  animation: home-shimmer 1.4s ease infinite;
+}
+
+.landing-glance__note {
+  margin: 0.9rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--landing-muted);
+}
+
+.landing-glance__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--landing-accent);
+}
+
+.landing-glance__link span {
+  transition: transform 0.18s ease;
+}
+
+.landing-glance__link:hover span {
+  transform: translateX(3px);
+}
+
+/* ---------- 2 · Capability cards ---------- */
+
+.landing-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(1rem, 2vw, 1.35rem);
+  margin-top: clamp(2.25rem, 4vw, 3rem);
+}
+
+@media (min-width: 880px) {
+  .landing-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.landing-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  padding: clamp(1.35rem, 2.4vw, 1.75rem);
+  background: var(--landing-card);
+  border: 1px solid var(--landing-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--landing-lift);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.landing-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--landing-lift-strong);
+  border-color: var(--landing-line-strong);
+}
+
+.landing-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  margin-bottom: 1.1rem;
+  border-radius: 10px;
+  color: var(--landing-accent);
+  background: var(--landing-accent-soft);
+}
+
+.landing-card__icon .lp-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.landing-card__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--landing-ink);
+}
+
+.landing-card__summary {
+  margin: 0.45rem 0 0;
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: var(--landing-muted);
+}
+
+.landing-card__items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin: 1.35rem 0 0;
+  padding: 1.15rem 0 0;
+  border-top: 1px solid var(--landing-line);
+}
+
+.landing-card__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.landing-card__item .lp-icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.22rem;
+  color: var(--landing-accent);
+}
+
+.landing-card__item > span {
+  min-width: 0;
+}
+
+.landing-card__name {
+  display: block;
+  font-size: 0.94rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--landing-ink);
+}
+
+.landing-card__text {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--landing-body);
+}
+
+/* ---------- 3 · Layered product screenshots ---------- */
+
+.landing-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(2rem, 4vw, 3.25rem);
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .landing-action {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  }
+}
+
+.landing-action__copy {
+  min-width: 0;
+}
+
+.landing-action .home-sub {
+  max-width: 32rem;
+}
+
+.landing-stack {
+  position: relative;
+  min-width: 0;
+}
+
+.landing-stack__frame {
+  margin: 0;
+  background: var(--landing-card);
+  border: 1px solid var(--landing-line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--landing-lift);
+}
+
+.landing-stack__frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.landing-stack:hover .landing-stack__frame img {
+  transform: scale(1.008);
+}
+
+.landing-stack__frame--main {
+  position: relative;
+  z-index: 1;
+}
+
+/* The family screen sits over the dashboard's lower edge on wide screens and
+   stacks underneath it on narrow ones, so both stay readable on a phone. */
+.landing-stack__frame--inset {
+  width: 100%;
+  margin-top: 1rem;
+  position: relative;
+  z-index: 2;
+}
+
+@media (min-width: 1024px) {
+  .landing-stack__frame--inset {
+    width: 64%;
+    margin: -3.5rem 0 0 auto;
+    box-shadow: var(--landing-lift-strong);
+  }
+}
+
+.landing-stack__caption {
+  margin: 1.15rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--landing-muted);
+}
+
+/* Compact labels describing what the screenshots show. */
+.landing-badges {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+}
+
+.landing-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  background: var(--landing-card);
+  border: 1px solid var(--landing-line);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--landing-body);
+}
+
+.landing-badge .lp-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  color: var(--landing-accent);
+}
+
+/* ---------- 4 · Joining steps ---------- */
+
+.landing-steps {
+  list-style: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(1rem, 2vw, 1.35rem);
+  margin: clamp(2.25rem, 4vw, 3rem) 0 0;
+  padding: 0;
+}
+
+@media (min-width: 880px) {
+  .landing-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.landing-step {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  padding: clamp(1.35rem, 2.4vw, 1.75rem);
+  background: var(--landing-card);
+  border: 1px solid var(--landing-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--landing-lift);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.landing-step:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--landing-lift-strong);
+  border-color: var(--landing-line-strong);
+}
+
+.landing-step__n {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--landing-accent);
+  font-variant-numeric: tabular-nums;
+  padding-bottom: 0.9rem;
+  margin-bottom: 1.05rem;
+  border-bottom: 1px solid var(--landing-line);
+}
+
+.landing-step__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--landing-ink);
+}
+
+.landing-step__text {
+  margin: 0.45rem 0 0;
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: var(--landing-body);
+}
+
+/* ---------- 5 · Closing invitation on wine ---------- */
+
+.landing-invite {
+  padding: clamp(3.25rem, 6vw, 5rem) 0;
+  background: var(--landing-invite-bg);
+  color: var(--landing-invite-ink);
+}
+
+.landing-invite__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(1.75rem, 3.5vw, 3rem);
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .landing-invite__inner {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  }
+}
+
+.landing-invite h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 3.6vw, 2.85rem);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  line-height: 1.08;
+  text-wrap: balance;
+  color: var(--landing-invite-ink);
+}
+
+.landing-invite h2 em {
+  font-style: italic;
+  color: var(--landing-invite-em);
+}
+
+.landing-invite p {
+  max-width: 34rem;
+  margin: 1rem 0 0;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--landing-invite-muted);
+}
+
+.landing-invite__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+@media (min-width: 900px) {
+  .landing-invite__actions {
+    justify-content: flex-end;
+  }
+}
+
+/* Filled light button for the filled wine surface; no shadow on a flat band. */
+.landing-invite .btn--light {
+  background: #fff;
+  color: var(--landing-accent);
+  box-shadow: none;
+}
+
+.landing-invite .btn--light:hover {
+  background: var(--landing-invite-em);
+  text-decoration: none;
+}
+
+.landing-invite .btn--outline {
+  background: transparent;
+  border-color: rgb(255 255 255 / 0.4);
+  color: #fff;
+}
+
+.landing-invite .btn--outline:hover {
+  background: rgb(255 255 255 / 0.12);
+  border-color: rgb(255 255 255 / 0.7);
+}
+
+.landing-invite__contact {
+  flex-basis: 100%;
+  font-size: 0.875rem;
+  color: var(--landing-invite-muted);
+}
+
+.landing-invite__contact:hover {
+  color: #fff;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+@media (min-width: 900px) {
+  .landing-invite__contact {
+    text-align: right;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-card,
+  .landing-step,
+  .landing-stack__frame img,
+  .landing-stack:hover .landing-stack__frame img,
+  .landing-glance__link span {
+    transform: none;
+    transition: none;
+  }
+
+  .landing-glance__skeleton {
+    animation: none;
   }
 }
 
@@ -3279,7 +3970,7 @@ img {
    ============================================================ */
 
 .app-card {
-  --app-radius: 18px;
+  --app-radius: 14px;
   --app-card-pad: clamp(1.25rem, 2.1vw, 1.75rem);
 
   background: var(--color-surface);
@@ -3462,7 +4153,7 @@ img {
   gap: var(--space-4);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 18px;
+  border-radius: 14px;
   box-shadow: var(--app-shadow, var(--shadow-sm));
   padding: var(--app-card-pad, var(--space-5));
 }
@@ -3677,7 +4368,7 @@ img {
 /* Small honest empty states */
 .app-empty {
   border: 1px solid var(--color-border);
-  border-radius: 18px;
+  border-radius: 14px;
   background: var(--color-surface);
   box-shadow: var(--app-shadow, var(--shadow-sm));
   padding: clamp(2.5rem, 5vw, 3.5rem) var(--space-5);
@@ -3691,7 +4382,7 @@ img {
 .app-empty__icon {
   width: 3.25rem;
   height: 3.25rem;
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--color-primary-soft);
   color: var(--color-primary);
   box-shadow: inset 0 0 0 1px var(--app-accent-ring);
@@ -3766,9 +4457,9 @@ img {
    ============================================================ */
 
 .shell {
-  --app-shadow: 0 1px 2px rgb(42 37 33 / 0.04), 0 18px 40px -24px rgb(42 37 33 / 0.18);
-  --app-shadow-lg: 0 2px 8px rgb(42 37 33 / 0.05), 0 30px 60px -28px rgb(42 37 33 / 0.26);
-  --app-accent-ring: rgb(138 43 43 / 0.1);
+  --app-shadow: 0 1px 2px rgb(41 39 42 / 0.04), 0 12px 28px -20px rgb(41 39 42 / 0.14);
+  --app-shadow-lg: 0 1px 3px rgb(41 39 42 / 0.05), 0 24px 48px -24px rgb(41 39 42 / 0.2);
+  --app-accent-ring: rgb(110 38 56 / 0.1);
   --app-grid-gap: clamp(1rem, 1.6vw, 1.25rem);
   --app-top-wash: #fdfcfa;
   --shell-header-h: 0rem;
@@ -3916,7 +4607,7 @@ img {
   padding: 0.85rem;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 16px;
+  border-radius: 14px;
   box-shadow: var(--app-shadow);
 }
 
@@ -4240,6 +4931,40 @@ img {
   background: var(--color-surface);
 }
 
+/* Landing page — dark treatment. The landing carries its own surface
+   tokens, so both themes get deliberate bands, cards and one wine panel
+   instead of light-on-dark leftovers. */
+[data-theme="dark"] .landing {
+  --landing-surface: #161311;
+  --landing-tint: #1c1815;
+  --landing-card: #211c19;
+  --landing-card-tint: #221d1a;
+  --landing-line: #352e29;
+  --landing-line-strong: #4d443c;
+  --landing-ink: #ece5de;
+  --landing-body: #c3b6ab;
+  --landing-muted: #9c9089;
+  --landing-accent: #cf7a70;
+  --landing-accent-soft: #3a2320;
+  --landing-invite-bg: #2b1a20;
+  --landing-invite-ink: #f7efec;
+  --landing-invite-muted: #d5b8b4;
+  --landing-invite-em: #eaa79b;
+  --landing-skeleton: #332c27;
+  --landing-lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 18px 40px -24px rgb(0 0 0 / 0.55);
+  --landing-lift-strong: 0 2px 6px rgb(0 0 0 / 0.45), 0 36px 70px -30px rgb(0 0 0 / 0.6);
+}
+
+/* On the wine band the filled button carries dark text for contrast. */
+[data-theme="dark"] .landing-invite .btn--light {
+  background: #f7efec;
+  color: #2b1a20;
+}
+
+[data-theme="dark"] .landing-invite .btn--light:hover {
+  background: var(--landing-invite-em);
+}
+
 [data-theme="dark"] .home-feature:hover {
   border-color: var(--hm-line-strong);
 }
@@ -4267,4 +4992,190 @@ img {
 
 [data-theme="dark"] .home-final__panel .btn--light {
   color: #7c2424;
+}
+
+/* ============================================================
+   Responsive hardening — mobile + desktop polish (UI-only).
+   Single shared block so one fix benefits every route:
+   - no unintended horizontal scrolling at 320px
+   - long user content (names, links, ids) wraps safely
+   - crowded rows stack instead of overlapping on narrow screens
+   - touch targets stay comfortably tappable
+   Brand tokens above are untouched.
+   ============================================================ */
+
+/* Never let the page scroll sideways; media always fits. */
+html,
+body {
+  overflow-x: clip;
+}
+
+img,
+video,
+table {
+  max-width: 100%;
+}
+
+/* Long user-generated content must wrap, never push the viewport. */
+.notice,
+.member-row__name,
+.member-row__meta,
+.app-members__info strong,
+.app-members__info span,
+.app-card__sub,
+.app-kv dd,
+.page-head__text p,
+.onb-hint,
+.onb-note p {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Utility for raw URLs / tokens (invitation links, transaction ids). */
+.u-break {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Tighter page gutters on very small screens so content keeps room. */
+@media (max-width: 480px) {
+  .container {
+    padding-inline: var(--space-4);
+  }
+}
+
+/* Member rows: name + badges/actions wrap instead of colliding. */
+.member-row__top {
+  flex-wrap: wrap;
+  row-gap: var(--space-2);
+}
+
+.member-row__name {
+  min-width: 0;
+  flex: 1 1 10rem;
+}
+
+.member-row__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+/* Overview rows (payments/membership) stack on narrow screens. */
+@media (max-width: 560px) {
+  .overview-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .overview-item .btn {
+    width: 100%;
+  }
+}
+
+/* Key-value rows keep labels readable when values are long. */
+.app-kv > div {
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+}
+
+.app-kv dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Stacked data-table cells: labels left, values right, long ids wrap. */
+@media (max-width: 640px) {
+  .data-table td {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Touch targets: keep icon buttons and nav comfortably tappable. */
+.menu-toggle,
+.icon-btn {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+
+.shell-bottomnav__item {
+  min-height: 3.25rem;
+  padding-inline: var(--space-1);
+}
+
+@media (pointer: coarse) {
+  .btn--sm {
+    min-height: 2.5rem;
+  }
+
+  .nav-link,
+  .side-link {
+    min-height: 2.75rem;
+  }
+}
+
+/* OTP field stays legible and fits at 320px. */
+@media (max-width: 380px) {
+  .otp-input {
+    font-size: 1.15rem;
+    letter-spacing: 0.3em;
+    padding-left: 1em;
+  }
+}
+
+/* Auth/onboarding actions already stack at 599px; keep buttons full-width
+   and reachable without excessive scrolling on small screens. */
+@media (max-width: 599px) {
+  .onb-shell {
+    padding-inline: var(--space-4);
+  }
+
+  .page-head__actions {
+    width: 100%;
+  }
+
+  .page-head__actions .btn {
+    width: 100%;
+  }
+}
+
+/* Public header fits at 320px: tighter gaps, compact brand text. */
+@media (max-width: 480px) {
+  .site-header__inner {
+    gap: var(--space-2);
+  }
+
+  .site-header__inner .logo__sub {
+    display: none;
+  }
+
+  .site-header__inner .logo__name {
+    font-size: var(--font-size-sm);
+  }
+
+  .site-header__inner .logo__img {
+    height: 2rem;
+  }
+
+  .site-nav__actions {
+    gap: var(--space-1);
+  }
+
+  .site-nav__actions .btn--primary {
+    padding-inline: 0.8rem;
+  }
+}
+
+/* Drawer + mobile nav: scrollable panels, locked body while open. */
+body.has-drawer,
+body.has-menu {
+  overflow: hidden;
+}
+
+.mobile-nav {
+  max-height: calc(100dvh - 4.25rem);
+  max-height: calc(100vh - 4.25rem);
+  overflow-y: auto;
 }

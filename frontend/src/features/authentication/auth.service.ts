@@ -9,6 +9,7 @@ import {
 import { api } from "../../services/api";
 import type {
   Member,
+  OtpPurpose,
   ProfilePatch,
   SendOtpResponse,
   VerifyOtpResponse,
@@ -51,11 +52,15 @@ export function toMember(profile: BackendMemberProfile): Member {
   };
 }
 
-export function sendOtp(input: { memberId: string; mobile: string }): Promise<SendOtpResponse> {
+export function sendOtp(input: {
+  memberId: string;
+  mobile: string;
+  purpose?: OtpPurpose;
+}): Promise<SendOtpResponse> {
   if (DEMO_MODE) return demoSendOtp(input);
   return api<{ expiresAt: string }>("/auth/request-otp", {
     method: "POST",
-    body: { mobile: input.mobile },
+    body: { mobile: input.mobile, ...(input.purpose ? { purpose: input.purpose } : {}) },
     auth: false,
   }).then((data) => ({
     expiresInSeconds: Math.max(
@@ -65,9 +70,21 @@ export function sendOtp(input: { memberId: string; mobile: string }): Promise<Se
   }));
 }
 
-export function resendOtp(input: { memberId: string; mobile: string }): Promise<SendOtpResponse> {
+export function resendOtp(input: {
+  memberId: string;
+  mobile: string;
+  purpose?: OtpPurpose;
+}): Promise<SendOtpResponse> {
   if (DEMO_MODE) return demoResendOtp(input);
   return sendOtp(input);
+}
+
+interface BackendVerifyOtp {
+  verified: boolean;
+  accountStatus: VerifyOtpResponse["accountStatus"];
+  nextAction: VerifyOtpResponse["nextAction"];
+  accessToken?: string;
+  member?: BackendMemberProfile;
 }
 
 export function verifyOtp(input: {
@@ -76,10 +93,37 @@ export function verifyOtp(input: {
   otp: string;
 }): Promise<VerifyOtpResponse> {
   if (DEMO_MODE) return demoVerifyOtp(input);
-  return api<{ accessToken: string; member: BackendMemberProfile }>(
+  return api<BackendVerifyOtp>(
     "/auth/verify-otp",
     { method: "POST", body: { mobile: input.mobile, code: input.otp }, auth: false },
-  ).then((data) => ({ token: data.accessToken, member: toMember(data.member) }));
+  ).then((data) => ({
+    verified: data.verified,
+    accountStatus: data.accountStatus,
+    nextAction: data.nextAction,
+    token: data.accessToken ?? null,
+    member: data.member ? toMember(data.member) : null,
+  }));
+}
+
+/**
+ * Development-only admin shortcut (local `vite dev` only — stripped from
+ * production builds). Calls the backend dev endpoint, which issues a real
+ * short-lived ADMIN JWT; no token is hardcoded in the frontend.
+ */
+export function devAdminLogin(): Promise<VerifyOtpResponse> {
+  if (!import.meta.env.DEV) {
+    return Promise.reject(new Error("Development login is not available."));
+  }
+  return api<{ accessToken: string; member: BackendMemberProfile }>(
+    "/auth/dev-admin-login",
+    { method: "POST", auth: false },
+  ).then((data) => ({
+    verified: true as const,
+    accountStatus: "APPROVED" as const,
+    nextAction: "LOGGED_IN" as const,
+    token: data.accessToken,
+    member: toMember(data.member),
+  }));
 }
 
 export function getMe(): Promise<{ member: Member }> {

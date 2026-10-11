@@ -48,7 +48,7 @@ export default function VerifyMemberPage() {
     setSending(true);
     setOtpError(null);
     try {
-      await sendOtp({ memberId: "", mobile: input.mobile });
+      await sendOtp({ memberId: "", mobile: input.mobile, purpose: "REGISTRATION" });
       restart();
       setStep("otp");
     } catch (err) {
@@ -66,17 +66,18 @@ export default function VerifyMemberPage() {
     setVerifying(true);
     setOtpError(null);
     try {
-      // 200 means this mobile already has an account — it belongs to login.
-      await verifyOtp({ memberId: "", mobile: attempt.mobile, otp });
-      setStep("registered");
-    } catch (err) {
-      const status =
-        err instanceof Error && "status" in err ? (err as { status?: number }).status : undefined;
-      if (status === 404) {
+      // Explicit outcome: only COMPLETE_REGISTRATION continues to matching.
+      // Any existing account (approved or pending) belongs to login.
+      const outcome = await verifyOtp({ memberId: "", mobile: attempt.mobile, otp });
+      if (outcome.nextAction === "COMPLETE_REGISTRATION") {
         await lookupMember();
+      } else if (outcome.nextAction === "CONTACT_SUPPORT") {
+        setOtpError("This registration was not approved. Please contact community support.");
       } else {
-        setOtpError(err instanceof Error ? err.message : "Verification failed. Please try again.");
+        setStep("registered");
       }
+    } catch (err) {
+      setOtpError(err instanceof Error ? err.message : "Verification failed. Please try again.");
     } finally {
       setVerifying(false);
     }

@@ -25,6 +25,12 @@ export interface RegistrationDetail {
     middleName: string | null;
     lastName: string | null;
     mobile: string | null;
+    bloodGroup: string | null;
+    age: number | null;
+    occupation: string | null;
+    area: string | null;
+    panName: string | null;
+    panNumber: string | null;
     isHead: boolean;
     status: string;
   }>;
@@ -119,7 +125,8 @@ export const findRegistrationById = async (
   }
   const family = familyResult.rows[0];
   const membersResult = await pool.query(
-    `SELECT id, first_name, middle_name, last_name, mobile, is_head, status
+    `SELECT id, first_name, middle_name, last_name, mobile, blood_group, age,
+            occupation, area, pan_name, pan_number, is_head, status
      FROM members WHERE family_id = $1 ORDER BY is_head DESC, first_name ASC`,
     [familyId],
   );
@@ -138,6 +145,12 @@ export const findRegistrationById = async (
       middleName: (row.middle_name as string | null) ?? null,
       lastName: (row.last_name as string | null) ?? null,
       mobile: (row.mobile as string | null) ?? null,
+      bloodGroup: (row.blood_group as string | null) ?? null,
+      age: (row.age as number | null) ?? null,
+      occupation: (row.occupation as string | null) ?? null,
+      area: (row.area as string | null) ?? null,
+      panName: (row.pan_name as string | null) ?? null,
+      panNumber: (row.pan_number as string | null) ?? null,
       isHead: row.is_head as boolean,
       status: row.status as string,
     })),

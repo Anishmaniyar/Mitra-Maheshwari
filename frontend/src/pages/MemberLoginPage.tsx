@@ -6,17 +6,16 @@ import { Input } from "../components/common/Input";
 import { AppLayout } from "../components/layout/AppLayout";
 import { OnboardingLayout } from "../components/onboarding/OnboardingLayout";
 import { FormField } from "../components/forms/FormField";
-import { sendOtp } from "../features/authentication/auth.service";
 import { emptyProfile, saveDraft } from "../features/registration/draft";
 
-/** Member Login: mobile number only — no names. OTP verification happens next. */
+/** Member Login: mobile number only — no names. The code is requested once,
+ *  explicitly, on the verification step (never on this page's mount). */
 export default function MemberLoginPage() {
   const navigate = useNavigate();
   const [mobile, setMobile] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const digits = mobile.replace(/\D/g, "");
     if (!/^[6-9]\d{9}$/.test(digits)) {
@@ -24,16 +23,8 @@ export default function MemberLoginPage() {
       return;
     }
     setError(null);
-    setSending(true);
-    try {
-      await sendOtp({ memberId: "", mobile: digits });
-      saveDraft({ memberId: "", mobile: digits, profile: emptyProfile(), flow: "login" });
-      navigate("/register/verify");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send the code. Please try again.");
-    } finally {
-      setSending(false);
-    }
+    saveDraft({ memberId: "", mobile: digits, profile: emptyProfile(), flow: "login" });
+    navigate("/register/verify");
   }
 
   return (
@@ -62,8 +53,8 @@ export default function MemberLoginPage() {
             </FormField>
             <div className="onb-actions">
               <div className="onb-actions__buttons">
-                <Button type="submit" loading={sending}>
-                  Get OTP
+                <Button type="submit">
+                  Continue
                 </Button>
               </div>
             </div>

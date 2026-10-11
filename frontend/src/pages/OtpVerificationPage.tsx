@@ -19,6 +19,7 @@ export default function OtpVerificationPage() {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notRegistered, setNotRegistered] = useState(false);
+  const [pendingApproval, setPendingApproval] = useState(false);
   const { seconds, restart } = useCountdown(60);
   const sentOnce = useRef(false);
 
@@ -29,7 +30,7 @@ export default function OtpVerificationPage() {
       setError(null);
       try {
         const call = resend ? resendOtp : sendOtp;
-        await call({ memberId: draft.memberId, mobile: draft.mobile });
+        await call({ memberId: draft.memberId, mobile: draft.mobile, purpose: "LOGIN" });
         restart();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Could not send the code. Please try again.");
@@ -59,29 +60,37 @@ export default function OtpVerificationPage() {
     setVerifying(true);
     setError(null);
     try {
+      // Explicit outcome — no HTTP-status sniffing. Only LOGGED_IN carries
+      // a session; every other state is messaged, never authenticated.
       const result = await verifyOtp({
         memberId: registration.memberId,
         mobile: registration.mobile,
         otp,
       });
-      login(result.token, result.member);
-      // Persist corrections made on the review form — but only when the draft
-      // actually carries profile details (member login has an empty profile).
-      if (registration.profile.firstName.trim() && registration.profile.lastName.trim()) {
-        const me = await updateMe(result.member.id, profileToPatch(registration.profile));
-        setUser(me.member);
+      if (result.nextAction === "LOGGED_IN" && result.token && result.member) {
+        login(result.token, result.member);
+        // Persist corrections made on the review form — but only when the draft
+        // actually carries profile details (member login has an empty profile).
+        if (registration.profile.firstName.trim() && registration.profile.lastName.trim()) {
+          const me = await updateMe(result.member.id, profileToPatch(registration.profile));
+          setUser(me.member);
+        }
+        clearDraft();
+        navigate("/dashboard", { replace: true });
+        return;
       }
-      clearDraft();
-      navigate("/dashboard", { replace: true });
-    } catch (err) {
-      const status = err instanceof Error && "status" in err ? (err as { status?: number }).status : undefined;
-      const message = err instanceof Error ? err.message : "Verification failed. Please try again.";
-      if (status === 404) {
+      if (result.nextAction === "AWAITING_APPROVAL") {
+        setPendingApproval(true);
+        setError(null);
+      } else if (result.nextAction === "COMPLETE_REGISTRATION") {
         setNotRegistered(true);
         setError(null);
       } else {
-        setError(message);
+        setError("This account was not approved. Please contact community support.");
       }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Verification failed. Please try again.";
+      setError(message);
       if (err instanceof Error && "code" in err && (err as { code?: string }).code === "OTP_EXPIRED") {
         setOtp("");
         restart();
@@ -127,6 +136,12 @@ export default function OtpVerificationPage() {
             <div className="notice notice--info" role="status">
               This mobile number is not registered yet.{" "}
               <Link to="/join">Join the Community</Link> to create your registration.
+            </div>
+          )}
+          {pendingApproval && (
+            <div className="notice notice--info" role="status">
+              Your registration is awaiting admin approval. You will be able to log in once
+              it is approved.
             </div>
           )}
         </OnboardingLayout>

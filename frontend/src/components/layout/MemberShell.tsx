@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { DEMO_MODE } from "../../config/demo";
 import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../hooks/useTheme";
@@ -107,7 +107,28 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 export function MemberShell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const location = useLocation();
+  const closeRef = useRef<HTMLButtonElement>(null);
   const initial = user ? user.firstName.charAt(0).toUpperCase() : "M";
+
+  // Close the drawer on route change; Escape + scroll-lock while open.
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    document.body.classList.add("has-drawer");
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDrawerOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.classList.remove("has-drawer");
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [drawerOpen]);
 
   return (
     <div className="shell">
@@ -216,10 +237,16 @@ export function MemberShell({ children }: { children: ReactNode }) {
             aria-hidden="true"
             onClick={() => setDrawerOpen(false)}
           />
-          <div className="drawer__panel" role="dialog" aria-label="Member navigation">
+          <div
+            className="drawer__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Member navigation"
+          >
             <div className="drawer__head">
               <Logo />
               <button
+                ref={closeRef}
                 type="button"
                 className="icon-btn"
                 aria-label="Close navigation menu"

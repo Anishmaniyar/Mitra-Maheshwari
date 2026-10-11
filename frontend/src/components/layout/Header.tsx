@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { Logo } from "../common/Logo";
 import { LpIcon, LP_PATHS } from "../common/LpIcon";
 import { useTheme } from "../../hooks/useTheme";
@@ -18,6 +18,25 @@ const PUBLIC_LINKS = [
 export function Header({ variant }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { theme, toggle } = useTheme();
+  const location = useLocation();
+
+  // Close the mobile menu on route change, on Escape, and lock body scroll.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    document.body.classList.add("has-menu");
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.classList.remove("has-menu");
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
 
   // Authenticated pages use MemberShell (sidebar) instead of this header.
   if (variant === "app") return null;
@@ -60,9 +79,9 @@ export function Header({ variant }: HeaderProps) {
             className="menu-toggle"
             aria-expanded={menuOpen}
             aria-controls="mobile-nav"
+            aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
             onClick={() => setMenuOpen((o) => !o)}
           >
-            <span className="sr-only">Menu</span>
             <span aria-hidden="true">{menuOpen ? "✕" : "☰"}</span>
           </button>
         </div>

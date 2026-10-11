@@ -207,7 +207,13 @@ export async function demoVerifyOtp(input: { memberId: string; mobile: string; o
   if (input.otp !== DEMO_TEST_OTP) {
     throw new ApiError(400, "INVALID_OTP", "The code you entered is incorrect. In demo mode, use 123456.");
   }
-  return { token: DEMO_TOKEN, member: DEMO_MEMBER };
+  return {
+    verified: true,
+    accountStatus: "APPROVED",
+    nextAction: "LOGGED_IN",
+    token: DEMO_TOKEN,
+    member: DEMO_MEMBER,
+  };
 }
 
 export async function demoGetMe(): Promise<{ member: Member }> {

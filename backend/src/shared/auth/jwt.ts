@@ -30,7 +30,10 @@ export const generateRefreshToken = (): { token: string; tokenHash: string } => 
 };
 
 export const hashRefreshToken = (token: string): string =>
-  crypto.createHmac('sha256', env.JWT_SECRET).update(token).digest('hex');
+  crypto
+    .createHmac('sha256', env.REFRESH_TOKEN_SECRET ?? env.JWT_SECRET)
+    .update(token)
+    .digest('hex');
 
 export const verifyAccessToken = (token: string): AccessTokenClaims =>
   jwt.verify(token, env.JWT_SECRET) as AccessTokenClaims;

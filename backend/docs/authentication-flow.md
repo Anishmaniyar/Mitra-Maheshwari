@@ -15,23 +15,28 @@ Authoritative flow doc for the auth implementation. No passwords exist in this s
 ## 1. Request OTP flow
 
 ```
-POST /api/auth/request-otp  { mobile }
-  → validateRequest (Zod: mobile format)
+POST /api/auth/request-otp  { mobile, purpose? }
+  → validateRequest (Zod: mobile format, purpose ∈ LOGIN | REGISTRATION | INVITATION)
   → find latest unconsumed otps row for mobile
   → rate-limit: reject if resend_count exceeded or last_sent_at too recent (429)
   → generate 6-digit OTP
   → hash OTP (never store the plain code; column: otps.code_hash)
   → INSERT otps (member_id = lookup by mobile, NULLABLE if no member yet;
-                 expires_at = now + short window; attempts = 0)
+                 expires_at = now + short window; attempts = 0;
+                 purpose = requested flow, NULLABLE for legacy rows)
   → demo delivery (non-production): the real random OTP is logged to the
      backend terminal only, e.g. `[OTP DEMO] OTP for mobile ending 1234: 583921`
   → 200 { message, status: 'success', data: { expiresAt } } — never echo the OTP
 ```
 
 Table used: `otps` (`mobile`, `code_hash`, `expires_at`, `attempts`, `max_attempts`,
-`resend_count`, `last_sent_at`, `consumed_at`).
+`resend_count`, `last_sent_at`, `consumed_at`, `purpose`, `used_at`, `used_for`).
 
 ## 2. Verify OTP flow
+
+Verification proves control of a mobile number. It does NOT implicitly log in:
+the response always carries an explicit `accountStatus` + `nextAction`, and
+tokens are present only when `nextAction` is `LOGGED_IN`.
 
 ```
 POST /api/auth/verify-otp  { mobile, code }
@@ -44,11 +49,30 @@ POST /api/auth/verify-otp  { mobile, code }
       → mismatch: attempts = attempts + 1 → 401
       → match: SET consumed_at = now() (single-use; consumed OTPs never verify again)
   → resolve member: accounts.mobile → member_id → members row
-      → no member yet → hand off to registration (registration_sessions;
-         otp_verified_at = now()). No tokens issued until a member exists.
-      → member.status ≠ APPROVED → 403 (PENDING/REJECTED members get no tokens)
-  → issue tokens (§3, §4)
+      → no member → 200 { verified: true, accountStatus: 'NONE',
+                          nextAction: 'COMPLETE_REGISTRATION' } (no tokens)
+      → member.status = PENDING → 200 { verified: true, accountStatus: 'PENDING',
+                                        nextAction: 'AWAITING_APPROVAL' } (no tokens)
+      → member.status = APPROVED → issue tokens (§3, §4) + 200
+        { verified: true, accountStatus: 'APPROVED', nextAction: 'LOGGED_IN',
+          accessToken, member }
+      → any other status (REJECTED) → 200 { verified: true,
+        accountStatus: 'REJECTED', nextAction: 'CONTACT_SUPPORT' } (no tokens)
 ```
+
+## 2b. Registration proof (single-use, flow-bound)
+
+Registration (`POST /api/registration/complete`) and invitation acceptance
+(`POST /api/family/invitations/:token/accept`) never trust the frontend.
+Each atomically claims the freshest consumed OTP for that mobile via
+`claimOtpProof(mobile, purpose, window)`:
+
+- `consumed_at` within the 15-minute window, `used_at IS NULL`,
+  `purpose` = the claiming flow (`REGISTRATION` / `INVITATION`).
+- The claim is one atomic `UPDATE … RETURNING`, guarded by
+  `used_at IS NULL` inside and outside, so concurrent claimants cannot share
+  a proof and a proof works exactly once, for one mobile, in one flow.
+- A `LOGIN` (or legacy `NULL`-purpose) proof is never claimable.
 
 Order matters: expiry and attempt checks run **before** hash comparison so a dead OTP
 can never authenticate, and every failed comparison increments `attempts`.

@@ -10,6 +10,30 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ): void => {
+  if (res.headersSent) {
+    _next(err);
+    return;
+  }
+
+  // Body-parser failures (malformed JSON, oversized payloads, bad charset).
+  // These are not AppErrors, so they would otherwise surface as 500s; their
+  // raw messages may quote request bytes, so use constant safe messages.
+  const bodyError = err as Error & { status?: number; type?: string };
+  if (typeof bodyError.type === 'string' && bodyError.type.startsWith('entity.')) {
+    if (bodyError.type === 'entity.too.large') {
+      res.status(413).json({
+        status: 'error',
+        message: 'Request body too large',
+      });
+      return;
+    }
+    res.status(400).json({
+      status: 'error',
+      message: 'Invalid request body',
+    });
+    return;
+  }
+
   const statusCode = err instanceof AppError ? err.statusCode : 500;
   const message =
     statusCode === 500 && env.NODE_ENV === 'production'

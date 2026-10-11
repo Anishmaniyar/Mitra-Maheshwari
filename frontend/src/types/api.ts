@@ -86,9 +86,23 @@ export interface SendOtpResponse {
   expiresInSeconds: number;
 }
 
+export type OtpPurpose = "LOGIN" | "REGISTRATION" | "INVITATION";
+
+export type AccountStatus = "NONE" | "PENDING" | "APPROVED" | "REJECTED";
+
+export type NextAction =
+  | "COMPLETE_REGISTRATION"
+  | "AWAITING_APPROVAL"
+  | "LOGGED_IN"
+  | "CONTACT_SUPPORT";
+
+/** Explicit verify-otp outcome. A token exists only for LOGGED_IN (approved). */
 export interface VerifyOtpResponse {
-  token: string;
-  member: Member;
+  verified: boolean;
+  accountStatus: AccountStatus;
+  nextAction: NextAction;
+  token: string | null;
+  member: Member | null;
 }
 
 export type MembershipStatus = "none" | "pending" | "paid" | "failed";

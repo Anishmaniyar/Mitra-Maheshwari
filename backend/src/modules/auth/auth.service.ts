@@ -6,19 +6,39 @@ import {
   generateRefreshToken,
   hashRefreshToken,
 } from '../../shared/auth/jwt.js';
-import { generateOtp, hashOtp, verifyOtpHash } from '../../shared/auth/otp.js';
+import { consoleOtpDelivery } from '../../shared/auth/otpDelivery.js';
+import {
+  requestChallenge,
+  verifyChallenge,
+} from './otpChallenge.store.js';
 import * as AuthRepository from './auth.repository.js';
 import type { RequestOtpInput, VerifyOtpInput } from './auth.schema.js';
-
-const OTP_EXPIRY_MINUTES = 5;
-const RESEND_COOLDOWN_SECONDS = 30;
-const MAX_RESEND_COUNT = 5;
 
 export interface IssuedAuth {
   accessToken: string;
   refreshToken: string;
   refreshExpiresAt: Date;
   member: AuthRepository.MemberProfile;
+}
+
+// Explicit verify-otp outcome. OTP verification proves control of a mobile
+// number only — it never implicitly signals the next step via HTTP status.
+// Tokens are present exclusively when nextAction is LOGGED_IN (approved).
+export type AccountStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+export type NextAction =
+  | 'COMPLETE_REGISTRATION'
+  | 'AWAITING_APPROVAL'
+  | 'LOGGED_IN'
+  | 'CONTACT_SUPPORT';
+
+export interface VerifiedOtp {
+  verified: true;
+  accountStatus: AccountStatus;
+  nextAction: NextAction;
+  accessToken?: string;
+  refreshToken?: string;
+  refreshExpiresAt?: Date;
+  member?: AuthRepository.MemberProfile;
 }
 
 export const parseDurationToMs = (value: string): number => {
@@ -43,75 +63,67 @@ export const getRefreshCookieMaxAgeMs = (): number =>
 export const requestOtp = async (
   input: RequestOtpInput,
 ): Promise<{ expiresAt: Date }> => {
-  const pending = await AuthRepository.findLatestPendingOtpByMobile(input.mobile);
+  // Purpose defaults to LOGIN when the caller omits it (same effective
+  // behavior as before: an unpurposed challenge can never satisfy a
+  // REGISTRATION/INVITATION proof). Challenge state, cooldowns, and resend
+  // caps live in Redis; delivery is a separate adapter (console in
+  // non-production, SMS provider later) and never touches verification.
+  const purpose = input.purpose ?? 'LOGIN';
+  const { code, expiresAt } = await requestChallenge(input.mobile, purpose);
 
-  if (pending) {
-    const secondsSinceLastSent =
-      (Date.now() - pending.lastSentAt.getTime()) / 1000;
-    if (secondsSinceLastSent < RESEND_COOLDOWN_SECONDS) {
-      throw new AppError('Please wait before requesting another OTP', 429);
-    }
-    if (pending.resendCount >= MAX_RESEND_COUNT) {
-      throw new AppError('Too many OTP requests. Please try again later', 429);
-    }
-  }
-
-  // Real random OTP every time. Delivery is out of scope for now: in
-  // non-production the code is logged to the backend terminal only
-  // (never returned in the API response).
-  const code = generateOtp();
-  const identity = await AuthRepository.findAuthIdentityByMobile(input.mobile);
-  const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
-
-  await AuthRepository.createOtp({
-    memberId: identity?.memberId ?? null,
-    mobile: input.mobile,
-    codeHash: hashOtp(code),
+  await consoleOtpDelivery.sendOtp({
+    mobile: input.mobile.trim(),
+    code,
+    purpose,
     expiresAt,
-    resendCount: pending ? pending.resendCount + 1 : 0,
   });
-
-  if (env.NODE_ENV !== 'production') {
-    console.log(`[OTP DEMO] OTP for mobile ending ${input.mobile.slice(-4)}: ${code}`);
-  }
 
   return { expiresAt };
 };
 
-export const verifyOtp = async (input: VerifyOtpInput): Promise<IssuedAuth> => {
-  const otp = await AuthRepository.findLatestPendingOtpByMobile(input.mobile);
+export const verifyOtp = async (input: VerifyOtpInput): Promise<VerifiedOtp> => {
+  // The challenge's bound purpose is authoritative. An explicitly supplied
+  // purpose must match it (else 401); otherwise the latest challenge for
+  // the mobile is consumed and its purpose drives the rules below.
+  // A session is issued only for a LOGIN challenge on an approved account:
+  // REGISTRATION/INVITATION challenges prove mobile control for their own
+  // flows (via the single-use Redis proof) and can never mint a session.
+  const { purpose } = await verifyChallenge(
+    input.mobile,
+    input.code,
+    input.purpose,
+  );
 
-  if (!otp || otp.expiresAt.getTime() <= Date.now()) {
-    throw new AppError('Invalid or expired OTP', 401);
+  // Verification succeeded: branch explicitly on account state. Tokens are
+  // present exclusively when nextAction is LOGGED_IN (approved + LOGIN).
+  const identity = await AuthRepository.findAuthIdentityByMobile(
+    input.mobile.trim(),
+  );
+  if (!identity) {
+    return {
+      verified: true,
+      accountStatus: 'NONE',
+      nextAction: 'COMPLETE_REGISTRATION',
+    };
   }
-  if (otp.attempts >= otp.maxAttempts) {
-    throw new AppError('Invalid or expired OTP', 401);
+  if (identity.status === 'PENDING') {
+    return {
+      verified: true,
+      accountStatus: 'PENDING',
+      nextAction: 'AWAITING_APPROVAL',
+    };
   }
-  if (!verifyOtpHash(input.code, otp.codeHash)) {
-    await AuthRepository.incrementOtpAttempts(otp.id);
-    throw new AppError('Invalid or expired OTP', 401);
-  }
-
-  // Consumed outside the transaction below so the single-use proof survives
-  // even when no account exists yet (registration reads this proof later).
-  // The conditional update also wins concurrent double-submits: only the
-  // first request consumes the OTP.
-  const consumed = await AuthRepository.consumeOtp(otp.id);
-  if (!consumed) {
-    throw new AppError('Invalid or expired OTP', 401);
+  if (identity.status !== 'APPROVED' || purpose !== 'LOGIN') {
+    return {
+      verified: true,
+      accountStatus: identity.status === 'APPROVED' ? 'APPROVED' : 'REJECTED',
+      nextAction: 'CONTACT_SUPPORT',
+    };
   }
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-
-    const identity = await AuthRepository.findAuthIdentityByMobile(input.mobile);
-    if (!identity) {
-      throw new AppError('Account not found. Please complete registration', 404);
-    }
-    if (identity.status !== 'APPROVED') {
-      throw new AppError('Account is not approved yet', 403);
-    }
 
     const { token, tokenHash } = generateRefreshToken();
     const refreshExpiresAt = new Date(
@@ -131,6 +143,9 @@ export const verifyOtp = async (input: VerifyOtpInput): Promise<IssuedAuth> => {
     }
 
     return {
+      verified: true,
+      accountStatus: 'APPROVED',
+      nextAction: 'LOGGED_IN',
       accessToken: generateAccessToken({
         memberId: identity.memberId,
         role: identity.role,

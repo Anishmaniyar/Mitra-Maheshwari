@@ -2,6 +2,10 @@ import { Router } from 'express';
 import { validateRequest } from '../../middleware/validate.middleware.js';
 import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
+import {
+  invitationAcceptIpLimiter,
+  invitationCreateUserLimiter,
+} from '../../middleware/rateLimit.js';
 import * as FamilySchema from './family.schema.js';
 import * as FamilyController from './family.controller.js';
 
@@ -26,6 +30,7 @@ familyRouter.post(
   '/invitations',
   authenticate,
   authorize('MEMBER'),
+  invitationCreateUserLimiter,
   validateRequest(FamilySchema.createInvitationSchema),
   FamilyController.createInvitationController,
 );
@@ -74,6 +79,7 @@ familyRouter.get(
 
 familyRouter.post(
   '/invitations/:token/accept',
+  invitationAcceptIpLimiter,
   validateRequest({
     params: FamilySchema.invitationTokenParamsSchema,
     body: FamilySchema.acceptInvitationSchema,
