@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "danger";
-  size?: "md" | "sm";
+  size?: "md" | "sm" | "xs" | "lg" | "icon";
   block?: boolean;
   loading?: boolean;
 }
@@ -21,6 +21,9 @@ export function Button({
     "btn",
     `btn--${variant}`,
     size === "sm" ? "btn--sm" : "",
+    size === "xs" ? "btn--xs" : "",
+    size === "lg" ? "btn--lg" : "",
+    size === "icon" ? "btn--icon" : "",
     block ? "btn--block" : "",
     loading ? "is-loading" : "",
     className,

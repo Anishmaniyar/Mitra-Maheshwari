@@ -92,7 +92,9 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           aria-pressed={theme === "dark"}
           aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
         >
-          <LpIcon d={theme === "dark" ? LP_PATHS.sun : LP_PATHS.moon} />
+          <span key={theme} className="theme-icon">
+            <LpIcon d={theme === "dark" ? LP_PATHS.sun : LP_PATHS.moon} />
+          </span>
           {theme === "dark" ? "Light mode" : "Dark mode"}
         </button>
         <button type="button" className="side-link side-link--button" onClick={logout}>

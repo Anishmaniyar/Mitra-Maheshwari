@@ -34,10 +34,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute("content", theme === "dark" ? "#201b18" : "#6e2638");
+      ?.setAttribute("content", theme === "dark" ? "#11110F" : "#FAFAF8");
   }, [theme ]);
 
   const toggle = useCallback(() => {
+    // Transient class so painted surfaces cross-fade instead of snapping.
+    if (
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      const root = document.documentElement;
+      root.classList.add("theme-anim");
+      window.setTimeout(() => root.classList.remove("theme-anim"), 500);
+    }
     setTheme((t) => (t === "dark" ? "light" : "dark"));
   }, []);
 

@@ -17,8 +17,17 @@ const PUBLIC_LINKS = [
 
 export function Header({ variant }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { theme, toggle } = useTheme();
   const location = useLocation();
+
+  // Transparent -> blur/border once past 40px. Passive listener, cheap toggle.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Close the mobile menu on route change, on Escape, and lock body scroll.
   useEffect(() => {
@@ -28,12 +37,14 @@ export function Header({ variant }: HeaderProps) {
   useEffect(() => {
     if (!menuOpen) return;
     document.body.classList.add("has-menu");
+    document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setMenuOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.classList.remove("has-menu");
+      document.body.style.overflow = "";
       window.removeEventListener("keydown", onKey);
     };
   }, [menuOpen]);
@@ -42,8 +53,8 @@ export function Header({ variant }: HeaderProps) {
   if (variant === "app") return null;
 
   return (
-    <header className="site-header">
-      <div className="container site-header__inner">
+    <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
+      <div className="container site-header__inner site-header__bar">
         <Link to="/" aria-label="Mitra Maheshwari Seva Pratishthan home">
           <Logo />
         </Link>
@@ -66,7 +77,9 @@ export function Header({ variant }: HeaderProps) {
             aria-pressed={theme === "dark"}
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           >
-            <LpIcon d={theme === "dark" ? LP_PATHS.sun : LP_PATHS.moon} />
+            <span key={theme} className="theme-icon">
+              <LpIcon d={theme === "dark" ? LP_PATHS.sun : LP_PATHS.moon} />
+            </span>
           </button>
           <Link to="/login" className="btn btn--ghost btn--sm hide-sm">
             Member Login
@@ -86,7 +99,10 @@ export function Header({ variant }: HeaderProps) {
           </button>
         </div>
       </div>
-      <div className={`container mobile-nav ${menuOpen ? "is-open" : ""}`} id="mobile-nav">
+      <div
+        className={`container mobile-nav landing-mobile-nav ${menuOpen ? "is-open" : ""}`}
+        id="mobile-nav"
+      >
         {PUBLIC_LINKS.map((link) => (
           <NavLink
             key={link.to}

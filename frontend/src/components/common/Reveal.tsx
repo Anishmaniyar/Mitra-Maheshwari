@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { useRevealOnce } from "../../hooks/useRevealOnce";
 
 interface RevealProps {
   children: ReactNode;
@@ -17,29 +17,7 @@ interface RevealProps {
  * `prefers-reduced-motion` (handled in CSS).
  */
 export function Reveal({ children, className = "", delay = 0 }: RevealProps) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [visible, setVisible] = useState(() => typeof IntersectionObserver === "undefined");
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || visible) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setVisible(true);
-            observer.disconnect();
-            return;
-          }
-        }
-      },
-      { threshold: 0.1, rootMargin: "0px 0px -8% 0px" },
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [visible]);
+  const [ref, visible] = useRevealOnce<HTMLDivElement>(0.1);
 
   return (
     <div
