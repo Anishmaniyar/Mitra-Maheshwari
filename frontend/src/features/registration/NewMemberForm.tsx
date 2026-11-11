@@ -52,7 +52,7 @@ export function NewMemberForm({ initial, busy, error, onSubmit, onCancel }: NewM
         your family head record will be created after mobile verification.
       </div>
 
-      <div className="onb-grid">
+      <div className="onb-grid onb-grid--single">
         <FormField label="First name" htmlFor="nm-firstName" error={errors.firstName} required>
           <Input
             id="nm-firstName"

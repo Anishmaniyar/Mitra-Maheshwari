@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { AuthLayout } from "../components/auth/AuthLayout";
 import { Button } from "../components/common/Button";
 import { ErrorState } from "../components/common/ErrorState";
 import { Input } from "../components/common/Input";
 import { LoadingState } from "../components/common/LoadingState";
 import { AppLayout } from "../components/layout/AppLayout";
-import { OnboardingLayout } from "../components/onboarding/OnboardingLayout";
 import { OtpVerifyForm } from "../features/authentication/OtpVerifyForm";
 import { sendOtp, verifyOtp } from "../features/authentication/auth.service";
 import {
@@ -21,6 +21,40 @@ import type { NewMemberInput } from "../types/api";
 import { FormField } from "../components/forms/FormField";
 
 type Step = "loading" | "mobile" | "code" | "profile" | "done" | "invalid";
+
+function stageCopy(
+  step: Step,
+  invitation: InvitationValidation | null,
+): { title: string; lead: string } {
+  switch (step) {
+    case "loading":
+      return { title: "You're invited to join a family", lead: "This will only take a moment." };
+    case "mobile":
+      return {
+        title: "Accept your family invitation",
+        lead: invitation
+          ? `${invitation.inviteeName} — verify your mobile number to accept this invitation.`
+          : "Verify your mobile number to accept this invitation.",
+      };
+    case "code":
+      return {
+        title: "Verify your mobile number",
+        lead: "Enter the 6-digit code we sent to your mobile number.",
+      };
+    case "profile":
+      return { title: "Confirm your details", lead: "Complete your profile to join the family." };
+    case "done":
+      return {
+        title: "Welcome to the family!",
+        lead: "Your membership has been added. Log in to continue.",
+      };
+    case "invalid":
+      return {
+        title: "Invitation unavailable",
+        lead: "Ask the Family Head for a new invitation link.",
+      };
+  }
+}
 
 function splitName(name: string): { firstName: string; lastName: string } {
   const parts = name.trim().split(/\s+/);
@@ -64,7 +98,7 @@ export default function InvitePage() {
     setSending(true);
     setError(null);
     try {
-      await sendOtp({ memberId: "", mobile: digits, purpose: "INVITATION" });
+      await sendOtp({ mobile: digits, purpose: "INVITATION" });
       setMobile(digits);
       restart();
       setStep("code");
@@ -91,7 +125,7 @@ export default function InvitePage() {
       // Explicit outcome: COMPLETE_REGISTRATION means the number is verified
       // (proof for acceptance) but has no account yet. Anything else already
       // has an account and belongs to login.
-      const outcome = await verifyOtp({ memberId: "", mobile, otp });
+      const outcome = await verifyOtp({ mobile, otp });
       if (outcome.nextAction === "COMPLETE_REGISTRATION") {
         setStep("profile");
       } else {
@@ -131,18 +165,11 @@ export default function InvitePage() {
 
   return (
     <AppLayout variant="plain">
-      <div className="lp home">
-        <OnboardingLayout
-          step={1}
+      <div className="lp">
+        <AuthLayout
           eyebrow="Family Invitation"
-          title={<>You&rsquo;re invited to join a family</>}
-          lead={
-            <>
-              {invitation
-                ? `${invitation.inviteeName} — verify your mobile number to accept this invitation.`
-                : "Validate your invitation link to continue."}
-            </>
-          }
+          title={stageCopy(step, invitation).title}
+          lead={stageCopy(step, invitation).lead}
         >
           {step === "loading" && <LoadingState message="Validating your invitation…" />}
 
@@ -204,11 +231,6 @@ export default function InvitePage() {
 
           {step === "done" && (
             <div className="onb-note">
-              <h2>Welcome to the family!</h2>
-              <p>
-                Your membership has been added. You can now log in with your verified mobile
-                number.
-              </p>
               <div className="onb-actions__buttons">
                 <Link to="/login" className="btn btn--primary">
                   Go to login
@@ -216,7 +238,7 @@ export default function InvitePage() {
               </div>
             </div>
           )}
-        </OnboardingLayout>
+        </AuthLayout>
       </div>
     </AppLayout>
   );

@@ -50,16 +50,19 @@ export const acceptInvitationSchema = z.object({
   ...memberProfileFields,
 });
 
+// PATCH semantics: an omitted field is left untouched, and null explicitly
+// clears a nullable column. Fields are `.optional().nullable()` so the frontend
+// can send what the person filled in without wiping the rest.
 export const updateFamilyMemberSchema = z.object({
-  firstName: memberProfileFields.firstName.optional(),
-  middleName: memberProfileFields.middleName,
+  firstName: z.string().trim().min(1, 'First name is required').max(100).optional(),
+  middleName: memberProfileFields.middleName.nullable(),
   lastName: z.string().trim().min(1).max(100).optional(),
-  bloodGroup: memberProfileFields.bloodGroup,
-  age: memberProfileFields.age,
-  occupation: memberProfileFields.occupation,
-  area: memberProfileFields.area,
-  panName: memberProfileFields.panName,
-  panNumber: memberProfileFields.panNumber,
+  bloodGroup: memberProfileFields.bloodGroup.nullable(),
+  age: memberProfileFields.age.nullable(),
+  occupation: memberProfileFields.occupation.nullable(),
+  area: memberProfileFields.area.nullable(),
+  panName: memberProfileFields.panName.nullable(),
+  panNumber: memberProfileFields.panNumber.nullable(),
 });
 
 export type CreateInvitationInput = z.infer<typeof createInvitationSchema>;

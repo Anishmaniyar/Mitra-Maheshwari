@@ -1,6 +1,5 @@
-import { DEMO_MODE, demoCreateMember, demoMatchMember } from "../../config/demo";
 import { api } from "../../services/api";
-import type { CreateMemberResponse, MatchResponse, Member, NewMemberInput } from "../../types/api";
+import type { MatchResponse, Member } from "../../types/api";
 
 export interface MatchInput {
   firstName: string;
@@ -36,7 +35,6 @@ function candidateToMember(candidate: BackendCandidate, mobile: string): Member 
 }
 
 export function matchMember(input: MatchInput): Promise<MatchResponse> {
-  if (DEMO_MODE) return demoMatchMember(input);
   const query = new URLSearchParams({
     firstName: input.firstName,
     lastName: input.lastName,
@@ -83,39 +81,13 @@ export interface CompleteRegistrationResponse {
   status: string;
 }
 
-/**
- * New registration — the backend creates the family + head member atomically.
- * There is no backend member record before OTP verification, so in real mode
- * this resolves a local draft shell; the record is created by
- * completeRegistration after the OTP step.
- */
-export function createMember(input: NewMemberInput): Promise<CreateMemberResponse> {
-  if (DEMO_MODE) return demoCreateMember(input);
-  const member: Member = {
-    id: "",
-    firstName: input.firstName,
-    middleName: input.middleName ?? null,
-    lastName: input.lastName,
-    mobile: input.mobile,
-    bloodGroup: input.bloodGroup ?? null,
-    age: input.age ?? null,
-    occupation: input.occupation ?? null,
-    area: input.area ?? null,
-    panName: null,
-    panNumber: null,
-    isActiveMember: false,
-    familyId: "",
-    isHead: false,
-    role: "",
-  };
-  return Promise.resolve({ member });
-}
-
 function omitEmpty(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
 }
 
+/** Creates the family + head member on the backend after OTP verification.
+    There is no local/simulated member record at any point in the flow. */
 export function completeRegistration(
   input: CompleteRegistrationInput,
 ): Promise<CompleteRegistrationResponse> {

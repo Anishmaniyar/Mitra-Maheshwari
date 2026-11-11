@@ -1,11 +1,3 @@
-import {
-  DEMO_MODE,
-  demoGetMe,
-  demoResendOtp,
-  demoSendOtp,
-  demoUpdateMe,
-  demoVerifyOtp,
-} from "../../config/demo";
 import { api } from "../../services/api";
 import type {
   Member,
@@ -53,11 +45,9 @@ export function toMember(profile: BackendMemberProfile): Member {
 }
 
 export function sendOtp(input: {
-  memberId: string;
   mobile: string;
   purpose?: OtpPurpose;
 }): Promise<SendOtpResponse> {
-  if (DEMO_MODE) return demoSendOtp(input);
   return api<{ expiresAt: string }>("/auth/request-otp", {
     method: "POST",
     body: { mobile: input.mobile, ...(input.purpose ? { purpose: input.purpose } : {}) },
@@ -70,12 +60,11 @@ export function sendOtp(input: {
   }));
 }
 
+/** Same endpoint: the backend applies its own resend cooldown/cap. */
 export function resendOtp(input: {
-  memberId: string;
   mobile: string;
   purpose?: OtpPurpose;
 }): Promise<SendOtpResponse> {
-  if (DEMO_MODE) return demoResendOtp(input);
   return sendOtp(input);
 }
 
@@ -88,11 +77,9 @@ interface BackendVerifyOtp {
 }
 
 export function verifyOtp(input: {
-  memberId: string;
   mobile: string;
   otp: string;
 }): Promise<VerifyOtpResponse> {
-  if (DEMO_MODE) return demoVerifyOtp(input);
   return api<BackendVerifyOtp>(
     "/auth/verify-otp",
     { method: "POST", body: { mobile: input.mobile, code: input.otp }, auth: false },
@@ -127,7 +114,6 @@ export function devAdminLogin(): Promise<VerifyOtpResponse> {
 }
 
 export function getMe(): Promise<{ member: Member }> {
-  if (DEMO_MODE) return demoGetMe();
   return api<BackendMemberProfile>("/auth/me").then((member) => ({
     member: toMember(member),
   }));
@@ -137,7 +123,6 @@ export function updateMe(
   memberId: string,
   patch: ProfilePatch,
 ): Promise<{ member: Member }> {
-  if (DEMO_MODE) return demoUpdateMe(patch);
   return api<unknown>(`/family/members/${memberId}`, {
     method: "PATCH",
     body: patch,
@@ -145,7 +130,6 @@ export function updateMe(
 }
 
 export function logout(): Promise<void> {
-  if (DEMO_MODE) return Promise.resolve();
   return api<null>("/auth/logout", { method: "POST" }).then(
     () => undefined,
     () => undefined,

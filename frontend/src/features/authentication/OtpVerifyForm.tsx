@@ -1,6 +1,5 @@
 import { Button } from "../../components/common/Button";
 import { OtpInput } from "../../components/forms/OtpInput";
-import { DEMO_MODE, DEMO_TEST_OTP } from "../../config/demo";
 
 interface OtpVerifyFormProps {
   maskedMobile: string;
@@ -41,13 +40,6 @@ export function OtpVerifyForm({
       <p className="onb-hint">
         A 6-digit verification code was sent to <strong>{maskedMobile}</strong>.
       </p>
-
-      {DEMO_MODE && (
-        <div className="notice notice--info">
-          <strong>Development mode:</strong> OTP verification is simulated. Enter the demo code{" "}
-          <strong>{DEMO_TEST_OTP}</strong> to continue.
-        </div>
-      )}
 
       {error && <div className="notice notice--error">{error}</div>}
 

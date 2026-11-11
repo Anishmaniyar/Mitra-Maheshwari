@@ -1,12 +1,9 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import type { ReactNode } from "react";
 import { AdminRoute, ProtectedRoute } from "../components/common/ProtectedRoute";
-import AboutPage from "../pages/AboutPage";
 import AdminDashboardPage from "../pages/AdminDashboardPage";
 import AdminLoginPage from "../pages/AdminLoginPage";
 import BloodPage from "../pages/BloodPage";
-import CommunityPage from "../pages/CommunityPage";
-import ContactPage from "../pages/ContactPage";
 import DashboardPage from "../pages/DashboardPage";
 import DiscoverPage from "../pages/DiscoverPage";
 import FamilyPage from "../pages/FamilyPage";
@@ -20,7 +17,6 @@ import NotificationsPage from "../pages/NotificationsPage";
 import OtpVerificationPage from "../pages/OtpVerificationPage";
 import PaymentsPage from "../pages/PaymentsPage";
 import ProfilePage from "../pages/ProfilePage";
-import ProgramsPage from "../pages/ProgramsPage";
 import ServicesPage from "../pages/ServicesPage";
 import SettingsPage from "../pages/SettingsPage";
 import VerifyMemberPage from "../pages/VerifyMemberPage";
@@ -32,12 +28,11 @@ function Protected({ children }: { children: ReactNode }) {
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Public */}
+      {/* Public — the marketing site is one page; nav links are anchors. */}
       <Route path="/" element={<LandingPage />} />
-      <Route path="/about" element={<AboutPage />} />
-      <Route path="/community" element={<CommunityPage />} />
-      <Route path="/programs" element={<ProgramsPage />} />
-      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/about" element={<Navigate to="/#about" replace />} />
+      <Route path="/community" element={<Navigate to="/#community" replace />} />
+      <Route path="/contact" element={<Navigate to="/#contact" replace />} />
       <Route path="/login" element={<MemberLoginPage />} />
       <Route path="/register" element={<VerifyMemberPage />} />
       <Route path="/join" element={<VerifyMemberPage />} />

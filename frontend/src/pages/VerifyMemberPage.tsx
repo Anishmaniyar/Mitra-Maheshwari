@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { AuthLayout } from "../components/auth/AuthLayout";
 import { Button } from "../components/common/Button";
 import { LoadingState } from "../components/common/LoadingState";
 import { AppLayout } from "../components/layout/AppLayout";
-import { OnboardingLayout } from "../components/onboarding/OnboardingLayout";
 import { OtpVerifyForm } from "../features/authentication/OtpVerifyForm";
 import { sendOtp, verifyOtp } from "../features/authentication/auth.service";
 import { CandidatePicker } from "../features/registration/CandidatePicker";
@@ -11,22 +11,50 @@ import { NewMemberForm } from "../features/registration/NewMemberForm";
 import { VerifyMemberForm } from "../features/registration/VerifyMemberForm";
 import type { VerifyMemberInput } from "../features/registration/VerifyMemberForm";
 import { profileFromMember, profileFromNewInput, saveDraft } from "../features/registration/draft";
-import { createMember, matchMember } from "../features/registration/registration.service";
+import { matchMember } from "../features/registration/registration.service";
 import { useCountdown } from "../hooks/useCountdown";
 import { maskMobile } from "../utils/format";
 import type { Member, NewMemberInput } from "../types/api";
 
 type Step = "form" | "otp" | "loading" | "candidates" | "notfound" | "newMember" | "registered";
 
+const STAGE_COPY: Record<Step, { title: string; lead: string }> = {
+  form: {
+    title: "Let's find your community record",
+    lead: "Enter your details to check whether your community record already exists.",
+  },
+  otp: {
+    title: "Verify your mobile number",
+    lead: "Enter the 6-digit code we sent to your mobile number.",
+  },
+  loading: {
+    title: "Checking your details",
+    lead: "This will only take a moment.",
+  },
+  candidates: {
+    title: "Is this your community record?",
+    lead: "Choose the record that belongs to you to continue.",
+  },
+  notfound: {
+    title: "No matching record found",
+    lead: "Double-check your details, or register your family as new.",
+  },
+  newMember: {
+    title: "Register as a new family",
+    lead: "Confirm your details to create your family head record.",
+  },
+  registered: {
+    title: "This number is already registered",
+    lead: "Log in with your verified mobile number to continue.",
+  },
+};
+
 export default function VerifyMemberPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const isLogin = location.pathname === "/login";
   const [step, setStep] = useState<Step>("form");
   const [candidates, setCandidates] = useState<Member[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState<VerifyMemberInput | null>(null);
-  const [creating, setCreating] = useState(false);
   const [otp, setOtp] = useState("");
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -48,7 +76,7 @@ export default function VerifyMemberPage() {
     setSending(true);
     setOtpError(null);
     try {
-      await sendOtp({ memberId: "", mobile: input.mobile, purpose: "REGISTRATION" });
+      await sendOtp({ mobile: input.mobile, purpose: "REGISTRATION" });
       restart();
       setStep("otp");
     } catch (err) {
@@ -68,11 +96,22 @@ export default function VerifyMemberPage() {
     try {
       // Explicit outcome: only COMPLETE_REGISTRATION continues to matching.
       // Any existing account (approved or pending) belongs to login.
-      const outcome = await verifyOtp({ memberId: "", mobile: attempt.mobile, otp });
+      const outcome = await verifyOtp({ mobile: attempt.mobile, otp });
       if (outcome.nextAction === "COMPLETE_REGISTRATION") {
         await lookupMember();
+      } else if (outcome.nextAction === "AWAITING_APPROVAL") {
+        setOtpError(
+          "Your registration is awaiting admin approval. You will be able to log in once it is approved.",
+        );
       } else if (outcome.nextAction === "CONTACT_SUPPORT") {
-        setOtpError("This registration was not approved. Please contact community support.");
+        // An approved number that used the join flow is a returning member,
+        // not a rejected registration: send them to login instead of implying
+        // their registration failed.
+        if (outcome.accountStatus === "APPROVED") {
+          setStep("registered");
+        } else {
+          setOtpError("This registration was not approved. Please contact community support.");
+        }
       } else {
         setStep("registered");
       }
@@ -103,34 +142,33 @@ export default function VerifyMemberPage() {
     }
   }
 
-  async function handleCreateNew(input: NewMemberInput) {
-    setCreating(true);
+  function handleCreateNew(input: NewMemberInput) {
+    // No member row exists yet: the backend creates the family + head after
+    // OTP verification. The draft only carries the entered details forward.
     setError(null);
-    try {
-      const res = await createMember(input);
-      saveDraft({
-        memberId: res.member.id,
-        mobile: input.mobile,
-        profile: profileFromNewInput(input),
-        flow: "join",
-      });
-      navigate("/register/details");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create your record. Please try again.");
-      setStep("newMember");
-    } finally {
-      setCreating(false);
-    }
+    saveDraft({
+      memberId: "",
+      mobile: input.mobile,
+      profile: profileFromNewInput(input),
+      flow: "join",
+    });
+    navigate("/register/details");
   }
 
   return (
     <AppLayout variant="plain">
-      <div className="lp home">
-        <OnboardingLayout
-          step={1}
-          eyebrow={isLogin ? "Member Login" : "Join the Community"}
-          title={<>Let&rsquo;s find your community record</>}
-          lead={<>Enter your details to check whether your community record already exists.</>}
+      <div className="lp">
+        <AuthLayout
+          eyebrow="Join the Community"
+          title={STAGE_COPY[step].title}
+          lead={STAGE_COPY[step].lead}
+          footer={
+            step === "form" ? (
+              <>
+                Already registered? <Link to="/login">Log in</Link>
+              </>
+            ) : undefined
+          }
         >
           {step === "form" && (
             <>
@@ -156,8 +194,6 @@ export default function VerifyMemberPage() {
 
           {step === "registered" && (
             <div className="onb-note">
-              <h2>This mobile number is already registered.</h2>
-              <p>Please log in with your verified mobile number instead.</p>
               <div className="onb-actions__buttons">
                 <Link to="/login" className="btn btn--primary">
                   Go to Member Login
@@ -166,7 +202,7 @@ export default function VerifyMemberPage() {
             </div>
           )}
 
-          {step === "loading" && <LoadingState message="Checking your details…" />}
+          {step === "loading" && <LoadingState message="Looking for your community record…" />}
 
           {step === "candidates" && attempt && (
             <CandidatePicker
@@ -181,9 +217,8 @@ export default function VerifyMemberPage() {
 
           {step === "notfound" && (
             <div className="onb-note">
-              <h2>We couldn't find a matching community record.</h2>
               <p>
-                Please double-check your name and mobile number — or register your family as new
+                Check the spelling of your name and mobile number, or register your family as new
                 if you're not in our records yet.
               </p>
               <div className="onb-actions">
@@ -202,13 +237,13 @@ export default function VerifyMemberPage() {
           {step === "newMember" && attempt && (
             <NewMemberForm
               initial={attempt}
-              busy={creating}
+              busy={false}
               error={error}
               onSubmit={(input) => void handleCreateNew(input)}
               onCancel={() => setStep("form")}
             />
           )}
-        </OnboardingLayout>
+        </AuthLayout>
       </div>
     </AppLayout>
   );

@@ -69,7 +69,6 @@ export const cleanupMobile = async (mobile: string): Promise<void> => {
       );
     }
   }
-  await pool.query(`DELETE FROM otps WHERE mobile = $1`, [mobile]);
   // Redis challenge/proof/cooldown/resend state for the same mobile.
   await ensureTestRedis();
   await deleteOtpStateForMobile(mobile);

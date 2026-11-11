@@ -1,6 +1,5 @@
 /* Dashboard data service. Pages call this — never fetch or repositories
-   directly. Demo/real routing is inherited from the family service, so the
-   UI never branches on the demo flag. */
+   directly, so the UI never branches on environment flags. */
 import { getFamily } from "../features/family/family.service";
 import type { Family } from "../types/api";
 

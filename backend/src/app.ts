@@ -62,6 +62,8 @@ app.use(
 app.use(express.json({ limit: env.JSON_BODY_LIMIT }));
 app.use(cookieParser());
 
+// Readiness probe: 200 only when the database answers, 503 otherwise, so an
+// orchestrator/load balancer stops routing to an instance that cannot serve.
 app.get('/health', async (_req, res) => {
   let db = 'down';
   try {
@@ -71,11 +73,12 @@ app.get('/health', async (_req, res) => {
     db = 'down';
   }
 
-  res.status(200).json({
-    message: 'OK',
-    status: 'success',
+  const ready = db === 'up';
+  res.status(ready ? 200 : 503).json({
+    message: ready ? 'OK' : 'Service unavailable',
+    status: ready ? 'success' : 'error',
     data: {
-      status: 'ok',
+      status: ready ? 'ok' : 'degraded',
       uptime: Math.floor(process.uptime()),
       db,
       timestamp: new Date().toISOString(),

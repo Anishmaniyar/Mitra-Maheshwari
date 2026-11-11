@@ -1,10 +1,10 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { AuthLayout } from "../components/auth/AuthLayout";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { AppLayout } from "../components/layout/AppLayout";
-import { OnboardingLayout } from "../components/onboarding/OnboardingLayout";
 import { FormField } from "../components/forms/FormField";
 import { emptyProfile, saveDraft } from "../features/registration/draft";
 
@@ -29,12 +29,16 @@ export default function MemberLoginPage() {
 
   return (
     <AppLayout variant="plain">
-      <div className="lp home">
-        <OnboardingLayout
-          step={1}
+      <div className="lp">
+        <AuthLayout
           eyebrow="Member Login"
           title={<>Log in with your mobile number</>}
           lead={<>Enter your registered mobile number to receive a verification code.</>}
+          footer={
+            <>
+              New to the community? <Link to="/join">Join the Community</Link>
+            </>
+          }
         >
           <form onSubmit={(e) => void handleSubmit(e)} noValidate className="onb-form onb-form--narrow">
             <FormField label="Mobile number" htmlFor="login-mobile" error={error ?? undefined} required>
@@ -59,7 +63,7 @@ export default function MemberLoginPage() {
               </div>
             </div>
           </form>
-        </OnboardingLayout>
+        </AuthLayout>
       </div>
     </AppLayout>
   );

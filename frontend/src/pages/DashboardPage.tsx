@@ -60,7 +60,6 @@ export default function DashboardPage() {
   const membership = family?.membership;
   const memberCount = family?.members.length ?? 0;
   const year = membership?.year ?? new Date().getFullYear();
-  const isPaid = membership?.status === "paid";
   const hasPayment = membership != null && membership.status !== "none" && membership.amount != null;
   const preview = family?.members.slice(0, 3) ?? [];
   const remaining = memberCount - preview.length;
@@ -74,12 +73,8 @@ export default function DashboardPage() {
 
   return (
     <AppLayout variant="app">
-      <PageContainer>
-        <PageHeader
-          eyebrow="Member Dashboard"
-          title={user ? `Namaste, ${user.firstName}!` : "Namaste!"}
-          description="Manage your family, membership and community activity from one place."
-        />
+      <PageContainer className="dash-page">
+        <PageHeader title={user ? `Namaste, ${user.firstName}!` : "Namaste!"} />
 
         {loading && <LoadingState message="Loading your dashboard…" />}
 
@@ -94,7 +89,7 @@ export default function DashboardPage() {
 
         {family && (
           <>
-            {/* Summary strip — the four headline numbers, one row. */}
+            {/* Summary strip — the three headline numbers, one row. */}
             <div className="app-summary">
               <article className="app-card app-summary__card">
                 <span className="app-card__icon">
@@ -104,23 +99,8 @@ export default function DashboardPage() {
                 <p className="app-card__value">
                   {memberCount} {memberCount === 1 ? "Member" : "Members"}
                 </p>
-                <p className="app-card__sub">Family #{family.familyId}</p>
                 <Link to="/family" className="app-card__link">
                   View Family <span aria-hidden="true">→</span>
-                </Link>
-              </article>
-
-              <article className="app-card app-summary__card">
-                <span className="app-card__icon">
-                  <LpIcon d={LP_PATHS.card} />
-                </span>
-                <h2>Membership</h2>
-                <p className="app-card__value">{year}</p>
-                <p className="app-card__sub">
-                  {membership ? MEMBERSHIP_TEXT[membership.status] : "—"}
-                </p>
-                <Link to="/membership" className="app-card__link">
-                  View Membership <span aria-hidden="true">→</span>
                 </Link>
               </article>
 
@@ -164,13 +144,12 @@ export default function DashboardPage() {
                     View Family <span aria-hidden="true">→</span>
                   </Link>
                 </div>
-                <p className="app-card__sub app-card__meta">
-                  Family #{family.familyId} · {memberCount}{" "}
-                  {memberCount === 1 ? "member" : "members"}
-                  {family.head
-                    ? ` · Head: ${fullName(family.head.firstName, family.head.middleName, family.head.lastName)}`
-                    : ""}
-                </p>
+                <div className="app-card__meta dash-family__meta">
+                  <span className="dash-meta__item">
+                    <span>Members</span>
+                    <strong>{memberCount}</strong>
+                  </span>
+                </div>
                 <ul className="app-members">
                   {preview.map((m) => (
                     <li key={m.id} className="app-members__row">
@@ -226,7 +205,7 @@ export default function DashboardPage() {
                 </ul>
               </section>
 
-              <section className="dash-panel" aria-labelledby="recent-payments">
+              <section className="dash-panel dash-panel--payments" aria-labelledby="recent-payments">
                 <div className="dash-panel__head">
                   <h2 id="recent-payments">Recent Payments</h2>
                   <Link to="/payments" className="app-card__link">
@@ -250,63 +229,11 @@ export default function DashboardPage() {
                   <p className="app-card__sub">No payments recorded yet.</p>
                 )}
               </section>
-
-              <section className="dash-panel" aria-labelledby="membership">
-                <div className="dash-panel__head">
-                  <h2 id="membership">Membership</h2>
-                  {membership && <StatusBadge status={MEMBERSHIP_BADGE[membership.status]} />}
-                </div>
-                <dl className="app-kv">
-                  <div>
-                    <dt>Plan</dt>
-                    <dd>{year} Membership</dd>
-                  </div>
-                  <div>
-                    <dt>Amount</dt>
-                    <dd>
-                      {membership?.amount != null
-                        ? formatCurrency(membership.amount, membership.currency)
-                        : "Fee not yet recorded"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Status</dt>
-                    <dd>{membership ? MEMBERSHIP_TEXT[membership.status] : "—"}</dd>
-                  </div>
-                </dl>
-                {isPaid ? (
-                  <p className="app-card__sub">Membership active for {year}.</p>
-                ) : (
-                  <p className="app-card__sub">Complete your annual membership payment.</p>
-                )}
-                {isPaid ? (
-                  <Link to="/payments" className="btn btn--secondary btn--sm">
-                    View Payments
-                  </Link>
-                ) : (
-                  <Link to="/payments" className="btn btn--primary btn--sm">
-                    Pay Membership <span aria-hidden="true">→</span>
-                  </Link>
-                )}
-              </section>
             </div>
 
-            {/* Secondary row — community activity and events. */}
-            <div className="dash-grid dash-grid--split">
-              <section className="dash-panel" aria-labelledby="updates-heading" id="updates">
-                <div className="dash-panel__head">
-                  <h2 id="updates-heading">Community Updates</h2>
-                </div>
-                <div className="app-empty app-empty--compact">
-                  <span className="app-empty__icon" aria-hidden="true">
-                    <LpIcon d={LP_PATHS.bell} />
-                  </span>
-                  <h3>No new community updates.</h3>
-                  <p>Important announcements will appear here.</p>
-                </div>
-              </section>
-
-              <section className="dash-panel" aria-labelledby="upcoming-events">
+            {/* Secondary row — community events. */}
+            <div className="dash-grid">
+              <section className="dash-panel dash-panel--wide" aria-labelledby="upcoming-events">
                 <div className="dash-panel__head">
                   <h2 id="upcoming-events">Upcoming Events</h2>
                 </div>

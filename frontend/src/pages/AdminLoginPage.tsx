@@ -1,10 +1,10 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { AuthLayout } from "../components/auth/AuthLayout";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { AppLayout } from "../components/layout/AppLayout";
-import { OnboardingLayout } from "../components/onboarding/OnboardingLayout";
 import { FormField } from "../components/forms/FormField";
 import { OtpVerifyForm } from "../features/authentication/OtpVerifyForm";
 import { devAdminLogin, sendOtp, verifyOtp } from "../features/authentication/auth.service";
@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
     setError(null);
     setSending(true);
     try {
-      await sendOtp({ memberId: "", mobile: digits, purpose: "LOGIN" });
+      await sendOtp({ mobile: digits, purpose: "LOGIN" });
       setMobile(digits);
       restart();
       setStep("code");
@@ -63,7 +63,7 @@ export default function AdminLoginPage() {
     setVerifying(true);
     setError(null);
     try {
-      const result = await verifyOtp({ memberId: "", mobile, otp });
+      const result = await verifyOtp({ mobile, otp });
       if (result.nextAction !== "LOGGED_IN" || !result.token || !result.member) {
         if (result.nextAction === "AWAITING_APPROVAL") {
           setError("This admin account is awaiting approval.");
@@ -107,9 +107,8 @@ export default function AdminLoginPage() {
 
   return (
     <AppLayout variant="plain">
-      <div className="lp home">
-        <OnboardingLayout
-          step={1}
+      <div className="lp">
+        <AuthLayout
           eyebrow="Admin Login"
           title={<>Administrator access</>}
           lead={<>Enter your admin mobile number to receive a verification code.</>}
@@ -169,7 +168,7 @@ export default function AdminLoginPage() {
               onChangeMobile={() => setStep("mobile")}
             />
           )}
-        </OnboardingLayout>
+        </AuthLayout>
       </div>
     </AppLayout>
   );

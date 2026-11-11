@@ -17,7 +17,7 @@ React + TypeScript + Vite + React Router PWA with a centralized CSS design syste
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173 — proxies /api to http://localhost:4000
+npm run dev        # http://localhost:5173 — proxies /api and /health to :5000
 npm run build      # typecheck + production build (PWA artifacts in dist/)
 ```
 
@@ -25,11 +25,11 @@ Set `VITE_API_BASE_URL` only when the API is not served at `/api`.
 
 ## Logo
 
-Place the real logo at `public/assets/logo.svg`. Until then the `Logo` component
-shows a monogram fallback automatically.
+The real logo ships at `public/cropped-logo-removebg-preview.webp` and is rendered
+by the `Logo` component (monogram fallback only if the asset is missing).
 
 ## Icons
 
-Placeholder PWA icons are generated with `node scripts/generate-icons.mjs`
-(regenerate after editing the brand color). Replace them with branded artwork
-before production.
+`node scripts/generate-icons.mjs` regenerates the favicon/PWA icon set from the
+real logo asset (it renders the logo through headless Chrome, preserving its
+proportions).

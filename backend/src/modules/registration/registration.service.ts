@@ -63,13 +63,10 @@ export const completeRegistration = async (
     );
   }
 
-  // Candidate lookup by name is informational only: a name match is never
-  // identity proof, so it cannot approve or link anything. Possible duplicates
-  // are reconciled by an admin at approval time.
-  await RegistrationRepository.findCandidateMembersByName(
-    input.firstName,
-    input.lastName,
-  );
+  // Candidate lookup by name is informational only (see findCandidates): a
+  // name match is never identity proof, so it cannot approve or link anything.
+  // Possible duplicates are reconciled by an admin at approval time. No extra
+  // query is run here — its result was never used.
 
   const client = await pool.connect();
   try {

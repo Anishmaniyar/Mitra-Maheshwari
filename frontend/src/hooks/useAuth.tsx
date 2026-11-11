@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { clearToken, getToken, setToken } from "../services/api";
+import { clearToken, onSessionExpired, restoreSession, setToken } from "../services/api";
 import { getMe, logout as logoutRequest } from "../features/authentication/auth.service";
 import type { AuthUser } from "../types/api";
 
@@ -18,16 +18,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Restore the session from a stored token, if any.
+  // Restore the session on load. The access token lives in memory only, so a
+  // reload starts with no token: re-mint one from the HttpOnly refresh cookie,
+  // then load the profile. No cookie (first visit / logged out) simply ends in
+  // the signed-out state.
   useEffect(() => {
     let cancelled = false;
-    if (!getToken()) {
-      setLoading(false);
-      return;
-    }
-    getMe()
+
+    onSessionExpired(() => {
+      if (!cancelled) {
+        setUserState(null);
+      }
+    });
+
+    restoreSession()
+      .then((restored) => (restored ? getMe() : null))
       .then((res) => {
-        if (!cancelled) setUserState(res.member);
+        if (!cancelled && res) setUserState(res.member);
       })
       .catch(() => {
         if (!cancelled) clearToken();
@@ -35,8 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
     return () => {
       cancelled = true;
+      onSessionExpired(null);
     };
   }, []);
 

@@ -43,10 +43,6 @@ export interface MatchResponse {
   candidates: Member[];
 }
 
-export interface CreateMemberResponse {
-  member: Member;
-}
-
 /** Editable profile fields (PATCH /api/me). */
 export interface ProfilePatch {
   firstName?: string;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Logo } from "../common/Logo";
 import { LpIcon, LP_PATHS } from "../common/LpIcon";
 import { useTheme } from "../../hooks/useTheme";
@@ -9,10 +9,9 @@ interface HeaderProps {
 }
 
 const PUBLIC_LINKS = [
-  { to: "/about", label: "About" },
-  { to: "/community", label: "Community" },
-  { to: "/programs", label: "Programs" },
-  { to: "/contact", label: "Contact" },
+  { hash: "#about", label: "About" },
+  { hash: "#community", label: "Community" },
+  { hash: "#contact", label: "Contact" },
 ] as const;
 
 export function Header({ variant }: HeaderProps) {
@@ -29,10 +28,10 @@ export function Header({ variant }: HeaderProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close the mobile menu on route change, on Escape, and lock body scroll.
+  // Close the mobile menu on route/hash change, on Escape, and lock body scroll.
   useEffect(() => {
     setMenuOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, location.hash]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -52,6 +51,16 @@ export function Header({ variant }: HeaderProps) {
   // Authenticated pages use MemberShell (sidebar) instead of this header.
   if (variant === "app") return null;
 
+  const isActive = (hash: string) => location.hash === hash;
+
+  // Clicking the current section again should still scroll it into view.
+  const onNavClick = (hash: string) => {
+    setMenuOpen(false);
+    if (location.hash === hash) {
+      document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
       <div className="container site-header__inner site-header__bar">
@@ -60,13 +69,15 @@ export function Header({ variant }: HeaderProps) {
         </Link>
         <nav className="site-nav" aria-label="Primary">
           {PUBLIC_LINKS.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              className={({ isActive }) => `nav-link${isActive ? " is-active" : ""}`}
+            <Link
+              key={link.hash}
+              to={`/${link.hash}`}
+              className={`nav-link${isActive(link.hash) ? " is-active" : ""}`}
+              aria-current={isActive(link.hash) ? "location" : undefined}
+              onClick={() => onNavClick(link.hash)}
             >
               {link.label}
-            </NavLink>
+            </Link>
           ))}
         </nav>
         <div className="site-nav__actions">
@@ -104,14 +115,14 @@ export function Header({ variant }: HeaderProps) {
         id="mobile-nav"
       >
         {PUBLIC_LINKS.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) => `nav-link${isActive ? " is-active" : ""}`}
-            onClick={() => setMenuOpen(false)}
+          <Link
+            key={link.hash}
+            to={`/${link.hash}`}
+            className={`nav-link${isActive(link.hash) ? " is-active" : ""}`}
+            onClick={() => onNavClick(link.hash)}
           >
             {link.label}
-          </NavLink>
+          </Link>
         ))}
         <Link to="/login" className="btn btn--secondary" onClick={() => setMenuOpen(false)}>
           Member Login

@@ -17,7 +17,6 @@ No business logic here — schema only.
 ```
 families 1 ──< members            (members.family_id → families, RESTRICT)
 members  1 ──1 accounts           (accounts.member_id UNIQUE → members, CASCADE)
-members  1 ──< otps               (otps.member_id NULLABLE → members, CASCADE)
 families 1 ──< family_invitations (family_invitations.family_id → families, CASCADE)
 members  1 ──< family_invitations (invited_by_member_id → members, NO ACTION)
 members  1 ──< refresh_tokens     (refresh_tokens.member_id → members, CASCADE)
@@ -36,11 +35,13 @@ family has no approver yet).
   by partial unique index `members_one_head_per_family ON (family_id) WHERE is_head`.
 - **`members.mobile` is NULLABLE** — imported data may lack valid numbers.
   Login identity is `accounts.mobile` (`NOT NULL UNIQUE`).
-- **`otps.member_id` is NULLABLE** — OTP can precede any member row. Only
-  `code_hash` is stored, never the plain code.
+- **OTP challenges are not stored in PostgreSQL** — they live in Redis
+  (`src/modules/auth/otpChallenge.store.ts`); the legacy `otps` table was dropped.
 - **Uniques:** `families.family_code`, `accounts.member_id`, `accounts.mobile`,
-  `family_invitations.token`. **Indexes:** `members(mobile)`, `otps(mobile)`,
-  `registration_sessions(mobile)`, `refresh_tokens(token_hash)` (non-unique, per spec).
+  `family_invitations.token`, `payments_one_success_per_family_year` and
+  `payments_one_open_per_family_year` (partial), and
+  `family_invitations_one_pending_per_mobile` (partial). **Indexes:**
+  `members(mobile)`, `registration_sessions(mobile)`, `refresh_tokens(token_hash)`.
 - **Timestamps:** `created_at` / `updated_at` default to `current_timestamp`
   (repositories set `updated_at = now()` on update).
 - **No payments tables** in this stage.

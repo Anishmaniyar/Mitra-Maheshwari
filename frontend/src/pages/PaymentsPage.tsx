@@ -27,6 +27,8 @@ export default function PaymentsPage() {
   const [paying, setPaying] = useState(false);
   const [payNotice, setPayNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const currentYear = new Date().getFullYear();
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -63,7 +65,7 @@ export default function PaymentsPage() {
       await verifyPayment(gateway);
       setPayNotice({
         type: "success",
-        text: "Payment verified successfully. Your membership is now active.",
+        text: `Payment received. Your membership is active for ${currentYear}.`,
       });
       await load();
     } catch (err) {
@@ -76,9 +78,10 @@ export default function PaymentsPage() {
     }
   }
 
-  const latest = payments && payments.length > 0 ? payments[0] : null;
-  const currentYear = new Date().getFullYear();
-  const status: MembershipStatus = latest ? latest.status : "none";
+  // The membership card must describe the current year only: an older paid
+  // receipt must never make the current year look settled.
+  const current = payments?.find((p) => p.year === currentYear) ?? null;
+  const status: MembershipStatus = current ? current.status : "none";
 
   return (
     <AppLayout variant="app">
@@ -94,8 +97,12 @@ export default function PaymentsPage() {
           <div className="surface overview-list" style={{ marginBottom: "var(--space-6)" }}>
             <div className="overview-item">
               <div>
-                <h3>Membership {latest?.year ?? currentYear}</h3>
-                <p>{latest ? formatCurrency(latest.amount, latest.currency) : "Fee not yet recorded"}</p>
+                <h3>Membership {currentYear}</h3>
+                <p>
+                  {current
+                    ? formatCurrency(current.amount, current.currency)
+                    : "Fee not yet recorded"}
+                </p>
               </div>
               <StatusBadge status={MEMBERSHIP_BADGE[status]} />
             </div>

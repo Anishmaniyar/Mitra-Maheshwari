@@ -70,17 +70,34 @@ export function profileFromMember(member: Member): ProfileFields {
   };
 }
 
-/** Converts form values into the API patch shape (PATCH /api/me). */
+/**
+ * Converts form values into a *sparse* API patch (PATCH /api/family/members/:id).
+ * Only fields the person actually filled in are sent: an untouched field stays
+ * exactly as stored instead of being cleared with null. Empty strings are
+ * omitted for the same reason (and because the API validates formats, so a
+ * blank optional field must not be sent as "").
+ */
 export function profileToPatch(profile: ProfileFields): ProfilePatch {
-  return {
-    firstName: profile.firstName.trim(),
-    middleName: profile.middleName.trim() || null,
-    lastName: profile.lastName.trim(),
-    age: profile.age ? Number(profile.age) : null,
-    bloodGroup: (profile.bloodGroup || null) as ProfilePatch["bloodGroup"],
-    occupation: profile.occupation.trim() || null,
-    area: profile.area.trim() || null,
-    panName: profile.panName.trim() || null,
-    panNumber: profile.panNumber.trim().toUpperCase() || null,
+  const patch: ProfilePatch = {};
+  const setText = <K extends keyof ProfilePatch>(key: K, value: string): void => {
+    const trimmed = value.trim();
+    if (trimmed) patch[key] = trimmed as ProfilePatch[K];
   };
+
+  setText("firstName", profile.firstName);
+  setText("middleName", profile.middleName);
+  setText("lastName", profile.lastName);
+  setText("occupation", profile.occupation);
+  setText("area", profile.area);
+  setText("panName", profile.panName);
+
+  const panNumber = profile.panNumber.trim().toUpperCase();
+  if (panNumber) patch.panNumber = panNumber;
+  if (profile.bloodGroup) patch.bloodGroup = profile.bloodGroup as ProfilePatch["bloodGroup"];
+  if (profile.age.trim()) {
+    const age = Number(profile.age);
+    if (Number.isFinite(age)) patch.age = age;
+  }
+
+  return patch;
 }

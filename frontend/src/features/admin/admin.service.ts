@@ -10,6 +10,13 @@ export interface PendingRegistration {
   headMobile: string | null;
 }
 
+export interface RegistrationPage {
+  items: PendingRegistration[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface RegistrationDetail {
   family: {
     id: string;
@@ -35,13 +42,15 @@ export interface RegistrationDetail {
   }>;
 }
 
-export function listRegistrations(): Promise<{
-  items: PendingRegistration[];
-  total: number;
-}> {
-  return api<{ items: PendingRegistration[]; total: number; limit: number; offset: number }>(
-    "/admin/registrations",
-  ).then((data) => ({ items: data.items, total: data.total }));
+export function listRegistrations(params: {
+  limit: number;
+  offset: number;
+}): Promise<RegistrationPage> {
+  const query = new URLSearchParams({
+    limit: String(params.limit),
+    offset: String(params.offset),
+  }).toString();
+  return api<RegistrationPage>(`/admin/registrations?${query}`);
 }
 
 export function getRegistration(id: string): Promise<RegistrationDetail> {

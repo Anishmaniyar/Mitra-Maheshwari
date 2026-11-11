@@ -4,9 +4,9 @@ import { AppError } from '../../shared/errors/appError.js';
 import { getRedis, toRedisUnavailableError } from '../../config/redis.js';
 import { generateOtp, hashOtp } from '../../shared/auth/otp.js';
 
-// Redis-backed OTP challenge lifecycle. Temporary challenge state lives here,
-// never in PostgreSQL: the `otps` table and its migrations are retained
-// untouched for history/audit, but new challenges are not written there.
+// Redis-backed OTP challenge lifecycle. This is the only OTP store: the legacy
+// PostgreSQL `otps` table has been dropped by migration, and there is no
+// database or in-memory fallback.
 //
 // Key layout (mobile is SHA-256 hashed: no PII, OTPs, or tokens in key names):
 //   otp:ch:v1:{purpose}:{mobHash}    Hash {h,a,c,p} + TTL (the challenge)

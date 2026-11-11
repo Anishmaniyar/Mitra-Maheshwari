@@ -15,9 +15,13 @@ import {
   type RegistrationDetail,
 } from "../features/admin/admin.service";
 
+const PAGE_SIZE = 20;
+
 /** Admin review queue: pending registrations with approve/reject. */
 export default function AdminDashboardPage() {
   const [items, setItems] = useState<PendingRegistration[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actingId, setActingId] = useState<string | null>(null);
@@ -27,18 +31,26 @@ export default function AdminDashboardPage() {
   const [detailLoading, setDetailLoading] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
 
+  const offset = page * PAGE_SIZE;
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await listRegistrations();
+      const res = await listRegistrations({ limit: PAGE_SIZE, offset });
       setItems(res.items);
+      setTotal(res.total);
+      // Handling the last item on a page can leave it empty: step back so the
+      // admin always sees the remaining queue instead of a blank page.
+      if (res.items.length === 0 && page > 0) {
+        setPage((p) => Math.max(0, p - 1));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load pending registrations.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [offset, page]);
 
   useEffect(() => {
     void load();
@@ -100,6 +112,11 @@ export default function AdminDashboardPage() {
       setActingId(null);
     }
   }
+
+  const shownFrom = items && items.length > 0 ? offset + 1 : 0;
+  const shownTo = offset + (items?.length ?? 0);
+  const hasPrev = page > 0;
+  const hasNext = shownTo < total;
 
   return (
     <AppLayout variant="app">
@@ -213,6 +230,33 @@ export default function AdminDashboardPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {items !== null && total > 0 && (
+            <div
+              className="onb-actions"
+              style={{ marginTop: "var(--space-4)", alignItems: "center" }}
+            >
+              <p className="onb-hint" style={{ margin: 0 }}>
+                Showing {shownFrom}–{shownTo} of {total}
+              </p>
+              <div className="onb-actions__buttons">
+                <Button
+                  variant="secondary"
+                  disabled={!hasPrev || loading}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={!hasNext || loading}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           )}
         </div>

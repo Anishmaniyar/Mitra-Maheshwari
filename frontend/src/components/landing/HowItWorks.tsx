@@ -15,10 +15,10 @@ export function HowItWorks() {
     <section id="how-it-works" ref={ref} className={`lp-section lp-section--tint${on}`}>
       <div className="lp-shell">
         <div className={`lp-rv${on}`} style={visible ? { transitionDelay: "0ms" } : undefined}>
-          <span className="home-eyebrow">How to become a member</span>
+          <span className="type-eyebrow">How to become a member</span>
           <h2 className="section-heading" style={{ marginTop: "0.75rem" }}>Joining takes three steps.</h2>
         </div>
-        <p className={`lp-rv${on} home-sub`} style={visible ? { transitionDelay: "150ms" } : undefined}>
+        <p className={`lp-rv${on} type-sub`} style={visible ? { transitionDelay: "150ms" } : undefined}>
           Takes a few minutes. Every record is reviewed before going live.
         </p>
 

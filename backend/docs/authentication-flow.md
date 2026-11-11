@@ -11,26 +11,28 @@ Authoritative flow doc for the auth implementation. No passwords exist in this s
 - **Member lookup uses mobile first** (`accounts.mobile`, unique, one row per member).
 - **JWTs carry no sensitive profile data.** Allowed claims only (see §3).
 - **Authorization is always enforced on the backend**, never delegated to the frontend.
+- **Challenge state lives in Redis only.** PostgreSQL has no OTP table; there is no
+  in-memory or database fallback (Redis unavailable → 503, fail closed).
 
 ## 1. Request OTP flow
 
 ```
 POST /api/auth/request-otp  { mobile, purpose? }
   → validateRequest (Zod: mobile format, purpose ∈ LOGIN | REGISTRATION | INVITATION)
-  → find latest unconsumed otps row for mobile
-  → rate-limit: reject if resend_count exceeded or last_sent_at too recent (429)
-  → generate 6-digit OTP
-  → hash OTP (never store the plain code; column: otps.code_hash)
-  → INSERT otps (member_id = lookup by mobile, NULLABLE if no member yet;
-                 expires_at = now + short window; attempts = 0;
-                 purpose = requested flow, NULLABLE for legacy rows)
-  → demo delivery (non-production): the real random OTP is logged to the
-     backend terminal only, e.g. `[OTP DEMO] OTP for mobile ending 1234: 583921`
+  → purpose defaults to LOGIN
+  → Redis, atomically:
+      SET otp:cd:{purpose}:{mobHash} NX EX OTP_RESEND_COOLDOWN_SECONDS   (cooldown)
+      INCR otp:rs:{purpose}:{mobHash} (+ TTL window)                     (resend cap)
+      HSET otp:ch:{purpose}:{mobHash} { h: hash(code), a: 0, c: 0, p: purpose } EX expiry
+      SET  otp:cur:{mobHash} purpose EX expiry                            (latest purpose)
+  → delivery adapter (console outside production): code is logged, never returned
   → 200 { message, status: 'success', data: { expiresAt } } — never echo the OTP
 ```
 
-Table used: `otps` (`mobile`, `code_hash`, `expires_at`, `attempts`, `max_attempts`,
-`resend_count`, `last_sent_at`, `consumed_at`, `purpose`, `used_at`, `used_for`).
+Key layout and policy live in `src/modules/auth/otpChallenge.store.ts`; the mobile
+number is SHA-256 hashed into key names (no PII/hashed codes as plain keys). Policy
+(expiry, attempts, cooldown, resend cap, proof TTL) is configured through
+`OTP_*` environment variables.
 
 ## 2. Verify OTP flow
 
@@ -39,47 +41,46 @@ the response always carries an explicit `accountStatus` + `nextAction`, and
 tokens are present only when `nextAction` is `LOGGED_IN`.
 
 ```
-POST /api/auth/verify-otp  { mobile, code }
+POST /api/auth/verify-otp  { mobile, code, purpose? }
   → validateRequest (Zod)
-  → SELECT latest otps row for mobile WHERE consumed_at IS NULL
-  → if none → 401 (generic message; do not reveal whether the mobile exists)
-  → if now > expires_at → 401
-  → if attempts >= max_attempts → 401 (OTP burned; request a new one)
-  → timing-safe compare hash(code) vs code_hash
-      → mismatch: attempts = attempts + 1 → 401
-      → match: SET consumed_at = now() (single-use; consumed OTPs never verify again)
-  → resolve member: accounts.mobile → member_id → members row
-      → no member → 200 { verified: true, accountStatus: 'NONE',
-                          nextAction: 'COMPLETE_REGISTRATION' } (no tokens)
-      → member.status = PENDING → 200 { verified: true, accountStatus: 'PENDING',
-                                        nextAction: 'AWAITING_APPROVAL' } (no tokens)
-      → member.status = APPROVED → issue tokens (§3, §4) + 200
-        { verified: true, accountStatus: 'APPROVED', nextAction: 'LOGGED_IN',
-          accessToken, member }
-      → any other status (REJECTED) → 200 { verified: true,
-        accountStatus: 'REJECTED', nextAction: 'CONTACT_SUPPORT' } (no tokens)
+  → Redis Lua script (single round trip, atomic):
+      missing/expired challenge            → 401 (generic message)
+      already consumed / attempts exhausted → 401
+      purpose mismatch (explicit purpose)   → 401, no state changed
+      wrong code                            → HINCRBY attempts, 401
+      correct code                          → mark consumed, DEL challenge,
+                                              SET otp:proof:{purpose}:{mobHash} EX ttl
+  → resolve identity: accounts.mobile → member
+      no account        → 200 { verified: true, accountStatus: 'NONE',
+                                nextAction: 'COMPLETE_REGISTRATION' } (no tokens)
+      status PENDING    → 200 { accountStatus: 'PENDING', nextAction: 'AWAITING_APPROVAL' }
+      status REJECTED   → 200 { accountStatus: 'REJECTED', nextAction: 'CONTACT_SUPPORT' }
+      APPROVED + LOGIN  → issue access + refresh tokens (§3, §4) and
+                          200 { accountStatus: 'APPROVED', nextAction: 'LOGGED_IN',
+                                accessToken, member }
+      APPROVED + other purpose → 200 { nextAction: 'CONTACT_SUPPORT' } (no tokens)
 ```
 
-## 2b. Registration proof (single-use, flow-bound)
+## 2b. Registration / invitation proof (single-use, flow-bound)
 
 Registration (`POST /api/registration/complete`) and invitation acceptance
-(`POST /api/family/invitations/:token/accept`) never trust the frontend.
-Each atomically claims the freshest consumed OTP for that mobile via
-`claimOtpProof(mobile, purpose, window)`:
+(`POST /api/family/invitations/:token/accept`) never trust the frontend. Each
+atomically claims the Redis proof for its own purpose
+(`claimVerificationProof(mobile, purpose)`), which is a single `GET` + `DEL`
+Lua script:
 
-- `consumed_at` within the 15-minute window, `used_at IS NULL`,
-  `purpose` = the claiming flow (`REGISTRATION` / `INVITATION`).
-- The claim is one atomic `UPDATE … RETURNING`, guarded by
-  `used_at IS NULL` inside and outside, so concurrent claimants cannot share
-  a proof and a proof works exactly once, for one mobile, in one flow.
-- A `LOGIN` (or legacy `NULL`-purpose) proof is never claimable.
-
-Order matters: expiry and attempt checks run **before** hash comparison so a dead OTP
-can never authenticate, and every failed comparison increments `attempts`.
+- The proof exists only after a successful verify for that exact purpose.
+- A `LOGIN` proof can never register or accept an invitation, and one proof
+  completes exactly one flow.
+- Expiry is `OTP_PROOF_TTL_SECONDS` (default 15 minutes). If the proof has
+  expired, the API returns 401 and the user must verify the mobile again.
+- The proof is claimed **before** the duplicate-mobile/account checks, so a
+  409 consumes it by design (the caller must re-verify).
 
 ## 3. Access token flow
 
-- Short-lived JWT (minutes, not days), sent in the response body.
+- Short-lived JWT (`ACCESS_TOKEN_EXPIRES_IN`, default 15 minutes), sent in the
+  response body and held **in memory** by the frontend.
 - Claims — **only** these:
   `sub` (member id), `role` (ADMIN | MEMBER), `familyId`, `isFamilyHead`, `iat`, `exp`, `jti`.
 - **Never inside JWT:** name, mobile, blood group, PAN, address, occupation,
@@ -102,7 +103,9 @@ POST /api/auth/refresh  (HttpOnly cookie carries the refresh token)
 Table used: `refresh_tokens` (`member_id`, `token_hash`, `expires_at`,
 `revoked_at`, `replaced_by_token_id` self-FK forming the rotation chain).
 Properties: long-lived, single-use via rotation, transported only via
-`HttpOnly` (+ `Secure`/`SameSite` in production) cookie — never in JS-readable storage.
+`HttpOnly` (+ `Secure`/`SameSite=Lax` in production) cookie — never in JS-readable
+storage. Because the access token is memory-only, the app calls `/auth/refresh`
+on load to restore a session; a failed refresh clears local auth state.
 
 ## 5. Logout flow
 

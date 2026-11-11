@@ -99,6 +99,7 @@ A successful verify atomically mints a purpose-bound proof
 (`otp:proof:…`, 15 min TTL). `completeRegistration` claims the
 `REGISTRATION` proof; invitation acceptance claims the `INVITATION` proof.
 Claims are atomic single-use: a `LOGIN` proof can never register/invite,
-and one proof completes exactly one flow. The legacy `otps` table and its
-migrations are retained untouched for history; new challenges do not use
-them (removal requires a reviewed migration).
+and one proof completes exactly one flow. Redis is the single source of
+truth: the legacy PostgreSQL `otps` table was removed by migration
+(`1790420200000_drop-legacy-otps-table.ts`) once the Redis store became
+authoritative.

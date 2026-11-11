@@ -2,19 +2,6 @@ import type { PoolClient } from 'pg';
 import { pool } from '../../config/database.js';
 import type { Role } from '../../shared/types/auth.types.js';
 
-export interface OtpRecord {
-  id: string;
-  memberId: string | null;
-  mobile: string;
-  codeHash: string;
-  expiresAt: Date;
-  attempts: number;
-  maxAttempts: number;
-  resendCount: number;
-  lastSentAt: Date;
-  consumedAt: Date | null;
-}
-
 export interface AuthIdentity {
   memberId: string;
   accountId: string;
@@ -53,95 +40,36 @@ export interface RefreshTokenRecord {
   replacedByTokenId: string | null;
 }
 
-const mapOtpRow = (row: Record<string, never>): OtpRecord => ({
-  id: row.id as string,
-  memberId: (row.member_id as string | null) ?? null,
-  mobile: row.mobile as string,
-  codeHash: row.code_hash as string,
-  expiresAt: row.expires_at as Date,
-  attempts: row.attempts as number,
-  maxAttempts: row.max_attempts as number,
-  resendCount: row.resend_count as number,
-  lastSentAt: row.last_sent_at as Date,
-  consumedAt: (row.consumed_at as Date | null) ?? null,
+type AuthIdentityDbRow = {
+  member_id: string;
+  account_id: string;
+  family_id: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string | null;
+  account_mobile: string;
+  status: string;
+  is_head: boolean;
+  role: Role;
+};
+
+const mapIdentityRow = (row: AuthIdentityDbRow): AuthIdentity => ({
+  memberId: row.member_id,
+  accountId: row.account_id,
+  familyId: row.family_id,
+  firstName: row.first_name,
+  middleName: row.middle_name ?? null,
+  lastName: row.last_name ?? null,
+  mobile: row.account_mobile,
+  status: row.status,
+  isHead: row.is_head,
+  role: row.role,
 });
-
-const mapIdentityRow = (row: Record<string, never>): AuthIdentity => ({
-  memberId: row.member_id as string,
-  accountId: row.account_id as string,
-  familyId: row.family_id as string,
-  firstName: row.first_name as string,
-  middleName: (row.middle_name as string | null) ?? null,
-  lastName: (row.last_name as string | null) ?? null,
-  mobile: row.account_mobile as string,
-  status: row.status as string,
-  isHead: row.is_head as boolean,
-  role: row.role as Role,
-});
-
-export const createOtp = async (input: {
-  memberId: string | null;
-  mobile: string;
-  codeHash: string;
-  expiresAt: Date;
-  resendCount: number;
-  purpose?: string | null;
-}): Promise<OtpRecord> => {
-  const result = await pool.query(
-    `INSERT INTO otps (member_id, mobile, code_hash, expires_at, resend_count, purpose)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id, member_id, mobile, code_hash, expires_at, attempts,
-               max_attempts, resend_count, last_sent_at, consumed_at`,
-    [
-      input.memberId,
-      input.mobile,
-      input.codeHash,
-      input.expiresAt,
-      input.resendCount,
-      input.purpose ?? null,
-    ],
-  );
-
-  return mapOtpRow(result.rows[0]);
-};
-
-export const findLatestPendingOtpByMobile = async (
-  mobile: string,
-): Promise<OtpRecord | null> => {
-  const result = await pool.query(
-    `SELECT id, member_id, mobile, code_hash, expires_at, attempts,
-            max_attempts, resend_count, last_sent_at, consumed_at
-     FROM otps
-     WHERE mobile = $1 AND consumed_at IS NULL
-     ORDER BY created_at DESC
-     LIMIT 1`,
-    [mobile],
-  );
-
-  return result.rows[0] ? mapOtpRow(result.rows[0]) : null;
-};
-
-export const incrementOtpAttempts = async (id: string): Promise<void> => {
-  await pool.query(`UPDATE otps SET attempts = attempts + 1 WHERE id = $1`, [id]);
-};
-
-// Conditional consume: returns false if another request consumed the OTP first.
-export const consumeOtp = async (
-  id: string,
-  client?: PoolClient,
-): Promise<boolean> => {
-  const db = client ?? pool;
-  const result = await db.query(
-    `UPDATE otps SET consumed_at = now() WHERE id = $1 AND consumed_at IS NULL`,
-    [id],
-  );
-  return (result.rowCount ?? 0) > 0;
-};
 
 export const findAuthIdentityByMobile = async (
   mobile: string,
 ): Promise<AuthIdentity | null> => {
-  const result = await pool.query(
+  const result = await pool.query<AuthIdentityDbRow>(
     `SELECT m.id AS member_id, m.family_id, m.first_name, m.middle_name, m.last_name,
             a.mobile AS account_mobile, m.status, m.is_head,
             a.id AS account_id, a.role

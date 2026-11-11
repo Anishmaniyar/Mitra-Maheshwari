@@ -34,9 +34,9 @@ export function SplitShowcase({
             {mockUI}
           </div>
           <div className={`lp-rv ${flip ? "lp-rv--left" : "lp-rv--right"}${on}${compact ? " lp-split--compact" : ""}`} style={visible ? { transitionDelay: "200ms" } : undefined}>
-            <span className="home-eyebrow">{eyebrow}</span>
+            <span className="type-eyebrow">{eyebrow}</span>
             <h2 className="section-heading" style={{ marginTop: "0.75rem" }}>{title}</h2>
-            <p className="home-sub">{body}</p>
+            <p className="type-sub">{body}</p>
             <ul style={{ listStyle: "none", margin: compact ? "1.25rem 0 0" : "1.5rem 0 0", padding: 0, display: "flex", flexDirection: "column", gap: compact ? "0.6rem" : "0.75rem" }}>
               {checklist.map((item, i) => (
                 <li

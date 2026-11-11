@@ -1,4 +1,3 @@
-import { DEMO_MODE, demoCreatePayment, demoGetPayments } from "../../config/demo";
 import { api } from "../../services/api";
 import type { CreateOrderResponse, Payment } from "../../types/api";
 
@@ -16,6 +15,18 @@ interface BackendPayment {
   updatedAt: string;
 }
 
+/**
+ * A payment counts as successful once Razorpay has accepted it: AUTHORIZED
+ * (funds held, capture follows via webhook) and CAPTURED both mean the family
+ * has paid for the year. This matches the backend, which also treats both
+ * statuses as "already paid" and rejects a second order.
+ */
+function toPaymentStatus(status: string): Payment["status"] {
+  if (status === "CAPTURED" || status === "AUTHORIZED") return "paid";
+  if (status === "FAILED") return "failed";
+  return "pending";
+}
+
 function toPayment(row: BackendPayment): Payment {
   return {
     id: row.id,
@@ -25,31 +36,19 @@ function toPayment(row: BackendPayment): Payment {
     currency: row.currency,
     transactionMode: row.provider,
     transactionId: row.providerPaymentId ?? row.receipt,
-    status:
-      row.status === "CAPTURED"
-        ? "paid"
-        : row.status === "FAILED"
-          ? "failed"
-          : "pending",
+    status: toPaymentStatus(row.status),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
 }
 
 export function getPayments(): Promise<{ payments: Payment[] }> {
-  if (DEMO_MODE) return demoGetPayments();
   return api<BackendPayment[]>("/payments").then((rows) => ({
     payments: rows.map(toPayment),
   }));
 }
 
 export function createPayment(): Promise<CreateOrderResponse> {
-  if (DEMO_MODE) {
-    return demoCreatePayment().then((res) => ({
-      payment: res.payment,
-      checkout: { keyId: "", orderId: "", amountPaise: 0, currency: "INR" },
-    }));
-  }
   return api<{ payment: BackendPayment; checkout: CreateOrderResponse["checkout"] }>(
     "/payments/order",
     { method: "POST", body: {} },

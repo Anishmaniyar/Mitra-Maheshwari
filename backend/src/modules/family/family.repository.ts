@@ -1,67 +1,20 @@
 import type { PoolClient } from 'pg';
 import { pool } from '../../config/database.js';
+import { mapFamilyMemberRow, mapInvitationRow } from './family.mapper.js';
+import type {
+  FamilyMemberDbRow,
+  FamilyMemberRow,
+  InvitationDbRow,
+  InvitationRow,
+} from './family.mapper.js';
+
+export type { FamilyMemberRow, InvitationRow } from './family.mapper.js';
 
 export interface FamilyRow {
   id: string;
   familyCode: string;
   status: string;
 }
-
-export interface FamilyMemberRow {
-  id: string;
-  familyId: string;
-  firstName: string;
-  middleName: string | null;
-  lastName: string | null;
-  mobile: string | null;
-  bloodGroup: string | null;
-  age: number | null;
-  occupation: string | null;
-  area: string | null;
-  isHead: boolean;
-  status: string;
-}
-
-export interface InvitationRow {
-  id: string;
-  familyId: string;
-  invitedByMemberId: string;
-  inviteeName: string;
-  inviteeMobile: string | null;
-  inviteeEmail: string | null;
-  token: string;
-  status: string;
-  expiresAt: Date;
-  acceptedAt: Date | null;
-}
-
-const mapMemberRow = (row: Record<string, never>): FamilyMemberRow => ({
-  id: row.id as string,
-  familyId: row.family_id as string,
-  firstName: row.first_name as string,
-  middleName: (row.middle_name as string | null) ?? null,
-  lastName: (row.last_name as string | null) ?? null,
-  mobile: (row.mobile as string | null) ?? null,
-  bloodGroup: (row.blood_group as string | null) ?? null,
-  age: (row.age as number | null) ?? null,
-  occupation: (row.occupation as string | null) ?? null,
-  area: (row.area as string | null) ?? null,
-  isHead: row.is_head as boolean,
-  status: row.status as string,
-});
-
-const mapInvitationRow = (row: Record<string, never>): InvitationRow => ({
-  id: row.id as string,
-  familyId: row.family_id as string,
-  invitedByMemberId: row.invited_by_member_id as string,
-  inviteeName: row.invitee_name as string,
-  inviteeMobile: (row.invitee_mobile as string | null) ?? null,
-  inviteeEmail: (row.invitee_email as string | null) ?? null,
-  token: row.token as string,
-  status: row.status as string,
-  expiresAt: row.expires_at as Date,
-  acceptedAt: (row.accepted_at as Date | null) ?? null,
-});
 
 const MEMBER_COLUMNS = `id, family_id, first_name, middle_name, last_name,
   mobile, blood_group, age, occupation, area, is_head, status`;
@@ -72,44 +25,44 @@ const INVITATION_COLUMNS = `id, family_id, invited_by_member_id, invitee_name,
 export const findFamilyById = async (
   familyId: string,
 ): Promise<FamilyRow | null> => {
-  const result = await pool.query(
-    `SELECT id, family_code, status FROM families WHERE id = $1`,
-    [familyId],
-  );
+  const result = await pool.query<{
+    id: string;
+    family_code: string;
+    status: string;
+  }>(`SELECT id, family_code, status FROM families WHERE id = $1`, [familyId]);
 
   if (!result.rows[0]) {
     return null;
   }
-  const row = result.rows[0];
   return {
-    id: row.id as string,
-    familyCode: row.family_code as string,
-    status: row.status as string,
+    id: result.rows[0].id,
+    familyCode: result.rows[0].family_code,
+    status: result.rows[0].status,
   };
 };
 
 export const findFamilyMembers = async (
   familyId: string,
 ): Promise<FamilyMemberRow[]> => {
-  const result = await pool.query(
+  const result = await pool.query<FamilyMemberDbRow>(
     `SELECT ${MEMBER_COLUMNS} FROM members
      WHERE family_id = $1
      ORDER BY is_head DESC, first_name ASC`,
     [familyId],
   );
 
-  return result.rows.map(mapMemberRow);
+  return result.rows.map(mapFamilyMemberRow);
 };
 
 export const findFamilyMemberById = async (
   memberId: string,
 ): Promise<FamilyMemberRow | null> => {
-  const result = await pool.query(
+  const result = await pool.query<FamilyMemberDbRow>(
     `SELECT ${MEMBER_COLUMNS} FROM members WHERE id = $1`,
     [memberId],
   );
 
-  return result.rows[0] ? mapMemberRow(result.rows[0]) : null;
+  return result.rows[0] ? mapFamilyMemberRow(result.rows[0]) : null;
 };
 
 export const createInvitation = async (input: {
@@ -121,7 +74,7 @@ export const createInvitation = async (input: {
   token: string;
   expiresAt: Date;
 }): Promise<InvitationRow> => {
-  const result = await pool.query(
+  const result = await pool.query<InvitationDbRow>(
     `INSERT INTO family_invitations
        (family_id, invited_by_member_id, invitee_name, invitee_mobile,
         invitee_email, token, status, expires_at)
@@ -144,7 +97,7 @@ export const createInvitation = async (input: {
 export const findInvitationsByFamilyId = async (
   familyId: string,
 ): Promise<InvitationRow[]> => {
-  const result = await pool.query(
+  const result = await pool.query<InvitationDbRow>(
     `SELECT ${INVITATION_COLUMNS} FROM family_invitations
      WHERE family_id = $1
      ORDER BY created_at DESC`,
@@ -154,10 +107,27 @@ export const findInvitationsByFamilyId = async (
   return result.rows.map(mapInvitationRow);
 };
 
+/** Pending invitation for the same family + mobile, if any. Used to make
+    invitation creation idempotent (a retried request reuses the live link). */
+export const findPendingInvitationByFamilyAndMobile = async (
+  familyId: string,
+  mobile: string,
+): Promise<InvitationRow | null> => {
+  const result = await pool.query<InvitationDbRow>(
+    `SELECT ${INVITATION_COLUMNS} FROM family_invitations
+     WHERE family_id = $1 AND invitee_mobile = $2 AND status = 'PENDING'
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [familyId, mobile],
+  );
+
+  return result.rows[0] ? mapInvitationRow(result.rows[0]) : null;
+};
+
 export const findInvitationById = async (
   id: string,
 ): Promise<InvitationRow | null> => {
-  const result = await pool.query(
+  const result = await pool.query<InvitationDbRow>(
     `SELECT ${INVITATION_COLUMNS} FROM family_invitations WHERE id = $1`,
     [id],
   );
@@ -168,7 +138,7 @@ export const findInvitationById = async (
 export const findInvitationByToken = async (
   token: string,
 ): Promise<InvitationRow | null> => {
-  const result = await pool.query(
+  const result = await pool.query<InvitationDbRow>(
     `SELECT ${INVITATION_COLUMNS} FROM family_invitations WHERE token = $1`,
     [token],
   );
@@ -213,7 +183,7 @@ export const createFamilyMember = async (
   },
   client: PoolClient,
 ): Promise<{ id: string; familyId: string }> => {
-  const result = await client.query(
+  const result = await client.query<{ id: string; family_id: string }>(
     `INSERT INTO members
        (family_id, first_name, middle_name, last_name, mobile, blood_group,
         age, occupation, area, pan_name, pan_number, is_head, status)
@@ -234,22 +204,21 @@ export const createFamilyMember = async (
     ],
   );
 
-  const row = result.rows[0];
-  return { id: row.id as string, familyId: row.family_id as string };
+  return { id: result.rows[0].id, familyId: result.rows[0].family_id };
 };
 
 export const createMemberAccount = async (
   input: { memberId: string; mobile: string },
   client: PoolClient,
 ): Promise<{ id: string }> => {
-  const result = await client.query(
+  const result = await client.query<{ id: string }>(
     `INSERT INTO accounts (member_id, mobile)
      VALUES ($1, $2)
      RETURNING id`,
     [input.memberId, input.mobile],
   );
 
-  return { id: result.rows[0].id as string };
+  return { id: result.rows[0].id };
 };
 
 const MEMBER_UPDATE_COLUMNS = new Set([

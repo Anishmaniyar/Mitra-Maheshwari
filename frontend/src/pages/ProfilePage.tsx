@@ -27,7 +27,6 @@ export default function ProfilePage() {
     ["Occupation", user.occupation ?? "Not set"],
     ["Area", user.area ?? "Not set"],
     ["Member ID", `#${user.id}`],
-    ["Family ID", `#${user.familyId}`],
   ];
 
   return (
@@ -38,7 +37,14 @@ export default function ProfilePage() {
             eyebrow="Profile"
             title="Your Profile"
             description="Your community member information."
-            actions={<StatusBadge status={profileComplete ? "active" : "inactive"} />}
+            actions={
+              <>
+                <StatusBadge status={profileComplete ? "active" : "inactive"} />
+                <Link to="/settings" className="btn btn--secondary btn--sm">
+                  Settings
+                </Link>
+              </>
+            }
           />
           <div className="app-card">
             <dl className="app-kv" style={{ marginBottom: "var(--space-4)" }}>

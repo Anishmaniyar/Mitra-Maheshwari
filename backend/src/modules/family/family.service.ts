@@ -88,17 +88,46 @@ export const createInvitation = async (
   const requester = await loadRequester(memberId);
   requireHead(requester);
 
-  const invitation = await FamilyRepository.createInvitation({
-    familyId: requester.familyId,
-    invitedByMemberId: requester.id,
-    inviteeName: input.inviteeName,
-    inviteeMobile: input.inviteeMobile,
-    inviteeEmail: input.inviteeEmail,
-    token: crypto.randomBytes(32).toString('hex'),
-    expiresAt: new Date(Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000),
-  });
+  // Idempotent creation: if the same family already has a live invitation for
+  // this mobile, return it instead of issuing a second link. This also makes a
+  // retry after a partial failure (invitation stored, response lost) safe.
+  if (input.inviteeMobile) {
+    const existing = await FamilyRepository.findPendingInvitationByFamilyAndMobile(
+      requester.familyId,
+      input.inviteeMobile,
+    );
+    if (existing) {
+      if (existing.expiresAt.getTime() > Date.now()) {
+        return existing;
+      }
+      await FamilyRepository.markInvitationExpired(existing.id);
+    }
+  }
 
-  return invitation;
+  try {
+    return await FamilyRepository.createInvitation({
+      familyId: requester.familyId,
+      invitedByMemberId: requester.id,
+      inviteeName: input.inviteeName,
+      inviteeMobile: input.inviteeMobile,
+      inviteeEmail: input.inviteeEmail,
+      token: crypto.randomBytes(32).toString('hex'),
+      expiresAt: new Date(Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000),
+    });
+  } catch (error) {
+    // Lost a concurrent race (unique pending invitation per mobile): return the
+    // invitation that won rather than failing the request.
+    if (isUniqueViolation(error) && input.inviteeMobile) {
+      const existing = await FamilyRepository.findPendingInvitationByFamilyAndMobile(
+        requester.familyId,
+        input.inviteeMobile,
+      );
+      if (existing) {
+        return existing;
+      }
+    }
+    throw error;
+  }
 };
 
 export const listInvitations = async (memberId: string) => {

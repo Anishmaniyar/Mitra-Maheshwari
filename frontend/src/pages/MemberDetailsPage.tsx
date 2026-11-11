@@ -1,13 +1,13 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import { AuthLayout } from "../components/auth/AuthLayout";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { Select } from "../components/common/Select";
 import { FormField } from "../components/forms/FormField";
 import { FormSection } from "../components/forms/FormSection";
 import { AppLayout } from "../components/layout/AppLayout";
-import { OnboardingLayout } from "../components/onboarding/OnboardingLayout";
 import { getDraft, saveDraft } from "../features/registration/draft";
 import { completeRegistration } from "../features/registration/registration.service";
 import type { ProfileFields } from "../types/api";
@@ -23,6 +23,7 @@ export default function MemberDetailsPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [verificationExpired, setVerificationExpired] = useState(false);
   const [pendingNotice, setPendingNotice] = useState<string | null>(null);
 
   if (!draft) return <Navigate to="/register" replace />;
@@ -77,7 +78,19 @@ export default function MemberDetailsPage() {
         "Your registration has been submitted and is pending admin approval. You will be able to log in once it is approved.",
       );
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Could not submit your registration. Please try again.");
+      // The single-use REGISTRATION proof expires after 15 minutes. Without a
+      // recovery link the user would be stuck on this page, so surface the
+      // expiry explicitly and offer to re-verify.
+      const status =
+        err instanceof Error && "status" in err ? (err as { status?: number }).status : undefined;
+      if (status === 401) {
+        setVerificationExpired(true);
+        setSubmitError(
+          "Your mobile verification has expired. Please verify your mobile number again to finish registering.",
+        );
+      } else {
+        setSubmitError(err instanceof Error ? err.message : "Could not submit your registration. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -85,22 +98,20 @@ export default function MemberDetailsPage() {
 
   return (
     <AppLayout variant="plain">
-      <div className="lp home">
-        <OnboardingLayout
-          step={2}
-          eyebrow="Join the Community · Step 2 of 3"
+      <div className="lp">
+        <AuthLayout
+          eyebrow="Join the Community"
           title={<>Review your details</>}
           lead={
             <>
-              We found a community record matching your information. Please review the details
-              below and correct anything that needs to be updated.
+              Confirm the details below and correct anything that needs to be updated.
             </>
           }
           back={{ to: "/register" }}
         >
           <form onSubmit={handleSubmit} noValidate className="onb-form onb-form--sections">
             <FormSection title="Basic information">
-              <div className="onb-grid">
+              <div className="onb-grid onb-grid--single">
                 <FormField label="First name" htmlFor="md-firstName" error={errors.firstName} required>
                   <Input
                     id="md-firstName"
@@ -131,7 +142,7 @@ export default function MemberDetailsPage() {
             </FormSection>
 
             <FormSection title="Personal details">
-              <div className="onb-grid">
+              <div className="onb-grid onb-grid--single">
                 <FormField label="Age" htmlFor="md-age" error={errors.age}>
                   <Input
                     id="md-age"
@@ -169,7 +180,7 @@ export default function MemberDetailsPage() {
             </FormSection>
 
             <FormSection title="Location">
-              <div className="onb-grid">
+              <div className="onb-grid onb-grid--single">
                 <div className="onb-span">
                   <FormField label="Area" htmlFor="md-area">
                     <Input
@@ -184,7 +195,7 @@ export default function MemberDetailsPage() {
             </FormSection>
 
             <FormSection title="PAN details">
-              <div className="onb-grid">
+              <div className="onb-grid onb-grid--single">
                 <FormField label="PAN name" htmlFor="md-panName">
                   <Input
                     id="md-panName"
@@ -207,6 +218,13 @@ export default function MemberDetailsPage() {
 
             <div className="onb-actions">
               {submitError && <div className="notice notice--error">{submitError}</div>}
+              {verificationExpired && (
+                <div className="onb-actions__links">
+                  <Link to="/register" className="btn btn--secondary btn--sm">
+                    Verify mobile number again
+                  </Link>
+                </div>
+              )}
               {pendingNotice && (
                 <div className="notice notice--success" role="status">
                   {pendingNotice}
@@ -219,7 +237,7 @@ export default function MemberDetailsPage() {
               </div>
             </div>
           </form>
-        </OnboardingLayout>
+        </AuthLayout>
       </div>
     </AppLayout>
   );

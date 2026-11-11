@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { DEMO_MODE } from "../../config/demo";
 import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../hooks/useTheme";
 import { Logo } from "../common/Logo";
@@ -39,7 +38,6 @@ const SECTIONS: NavSection[] = [
     items: [
       { to: "/membership", label: "Membership", icon: LP_PATHS.card },
       { to: "/payments", label: "Payments", icon: LP_PATHS.receipt },
-      { to: "/notifications", label: "Notifications", icon: LP_PATHS.bell },
       { to: "/profile", label: "Profile", icon: LP_PATHS.user },
     ],
   },
@@ -55,7 +53,6 @@ const BOTTOM_NAV: NavItem[] = [
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const { logout } = useAuth();
-  const { theme, toggle } = useTheme();
   return (
     <div className="side-nav__scroll">
       {SECTIONS.map((section) => (
@@ -76,27 +73,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       ))}
       <div className="side-group">
-        <span className="side-group__label">Preferences</span>
-        <NavLink
-          to="/settings"
-          onClick={onNavigate}
-          className={({ isActive }) => `side-link${isActive ? " is-active" : ""}`}
-        >
-          <LpIcon d={LP_PATHS.cog} />
-          Settings
-        </NavLink>
-        <button
-          type="button"
-          className="side-link side-link--button"
-          onClick={toggle}
-          aria-pressed={theme === "dark"}
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          <span key={theme} className="theme-icon">
-            <LpIcon d={theme === "dark" ? LP_PATHS.sun : LP_PATHS.moon} />
-          </span>
-          {theme === "dark" ? "Light mode" : "Dark mode"}
-        </button>
         <button type="button" className="side-link side-link--button" onClick={logout}>
           <LpIcon d={LP_PATHS.logout} />
           Logout
@@ -108,6 +84,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 
 export function MemberShell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { theme, toggle } = useTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -140,9 +117,20 @@ export function MemberShell({ children }: { children: ReactNode }) {
           <Logo />
         </Link>
         <span className="shell-header__spacer" />
-        <Link to="/dashboard#updates" className="icon-btn" aria-label="Community updates">
+        <Link to="/notifications" className="icon-btn" aria-label="Notifications">
           <LpIcon d={LP_PATHS.bell} />
         </Link>
+        <button
+          type="button"
+          className="icon-btn"
+          onClick={toggle}
+          aria-pressed={theme === "dark"}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          <span key={theme} className="theme-icon">
+            <LpIcon d={theme === "dark" ? LP_PATHS.sun : LP_PATHS.moon} />
+          </span>
+        </button>
         {user && (
           <Link to="/profile" className="site-header__user-chip" aria-label="Your profile">
             <span className="avatar" aria-hidden="true">
@@ -159,19 +147,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
         {/* Desktop sidebar */}
         <aside className="side" aria-label="Member navigation">
           <SidebarNav />
-          {user && (
-            <div className="side__user">
-              <span className="avatar" aria-hidden="true">
-                {initial}
-              </span>
-              <span className="side__user-text">
-                <strong>
-                  {user.firstName} {user.lastName}
-                </strong>
-                <span>Member</span>
-              </span>
-            </div>
-          )}
         </aside>
 
         <div className="shell__main">
@@ -191,9 +166,20 @@ export function MemberShell({ children }: { children: ReactNode }) {
               <Logo className="logo--hide-text-sm" />
             </Link>
             <span className="shell-topbar__spacer" />
-            <Link to="/dashboard#updates" className="icon-btn" aria-label="Community updates">
+            <Link to="/notifications" className="icon-btn" aria-label="Notifications">
               <LpIcon d={LP_PATHS.bell} />
             </Link>
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={toggle}
+              aria-pressed={theme === "dark"}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              <span key={theme} className="theme-icon">
+                <LpIcon d={theme === "dark" ? LP_PATHS.sun : LP_PATHS.moon} />
+              </span>
+            </button>
             {user && (
               <Link to="/profile" className="site-header__user-chip" aria-label="Your profile">
                 <span className="avatar" aria-hidden="true">
@@ -202,15 +188,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
               </Link>
             )}
           </div>
-
-          {DEMO_MODE && (
-            <div className="container">
-              <div className="notice notice--info shell-demo" role="status">
-                <strong>Demo mode:</strong> You&rsquo;re viewing simulated community data — no real
-                records are changed.
-              </div>
-            </div>
-          )}
 
           <main className="shell__content">{children}</main>
 

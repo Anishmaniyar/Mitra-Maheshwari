@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { AuthLayout } from "../components/auth/AuthLayout";
 import { AppLayout } from "../components/layout/AppLayout";
-import { OnboardingLayout } from "../components/onboarding/OnboardingLayout";
 import { OtpVerifyForm } from "../features/authentication/OtpVerifyForm";
 import { resendOtp, sendOtp, updateMe, verifyOtp } from "../features/authentication/auth.service";
 import { clearDraft, getDraft, profileToPatch } from "../features/registration/draft";
@@ -30,7 +30,7 @@ export default function OtpVerificationPage() {
       setError(null);
       try {
         const call = resend ? resendOtp : sendOtp;
-        await call({ memberId: draft.memberId, mobile: draft.mobile, purpose: "LOGIN" });
+        await call({ mobile: draft.mobile, purpose: "LOGIN" });
         restart();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Could not send the code. Please try again.");
@@ -62,18 +62,20 @@ export default function OtpVerificationPage() {
     try {
       // Explicit outcome — no HTTP-status sniffing. Only LOGGED_IN carries
       // a session; every other state is messaged, never authenticated.
-      const result = await verifyOtp({
-        memberId: registration.memberId,
-        mobile: registration.mobile,
-        otp,
-      });
+      const result = await verifyOtp({ mobile: registration.mobile, otp });
       if (result.nextAction === "LOGGED_IN" && result.token && result.member) {
         login(result.token, result.member);
-        // Persist corrections made on the review form — but only when the draft
-        // actually carries profile details (member login has an empty profile).
-        if (registration.profile.firstName.trim() && registration.profile.lastName.trim()) {
-          const me = await updateMe(result.member.id, profileToPatch(registration.profile));
-          setUser(me.member);
+        // Persist only the fields the person actually filled in (sparse patch).
+        // Saving corrections is optional: the session is already valid, so a
+        // failure here must never strand the user on the OTP screen.
+        const patch = profileToPatch(registration.profile);
+        if (Object.keys(patch).length > 0) {
+          try {
+            const me = await updateMe(result.member.id, patch);
+            setUser(me.member);
+          } catch {
+            // Non-blocking: keep the verified session and continue.
+          }
         }
         clearDraft();
         navigate("/dashboard", { replace: true });
@@ -107,17 +109,11 @@ export default function OtpVerificationPage() {
 
   return (
     <AppLayout variant="plain">
-      <div className="lp home">
-        <OnboardingLayout
-          step={3}
-          eyebrow="Almost Done · Step 3 of 3"
+      <div className="lp">
+        <AuthLayout
+          eyebrow={registration.flow === "join" ? "Join the Community" : "Member Login"}
           title={<>Verify your mobile number</>}
-          lead={
-            <>
-              We&rsquo;ve sent a 6-digit verification code to your mobile number. Enter it below
-              to complete your login.
-            </>
-          }
+          lead={<>Enter the 6-digit code we sent to your mobile number.</>}
           back={{ to: "/register/details" }}
         >
           <OtpVerifyForm
@@ -144,7 +140,7 @@ export default function OtpVerificationPage() {
               it is approved.
             </div>
           )}
-        </OnboardingLayout>
+        </AuthLayout>
       </div>
     </AppLayout>
   );

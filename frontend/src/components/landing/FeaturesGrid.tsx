@@ -20,10 +20,10 @@ export function FeaturesGrid() {
     <section id="features" ref={ref} className="lp-section">
       <div className="lp-shell">
         <div className={`lp-rv${on}`}>
-          <span className="home-eyebrow">What you can do here</span>
+          <span className="type-eyebrow">What you can do here</span>
           <h2 className="section-heading" style={{ marginTop: "1rem" }}>One platform for community life.</h2>
         </div>
-        <p className={`lp-rv${on} home-sub`} style={visible ? { transitionDelay: "150ms" } : undefined}>
+        <p className={`lp-rv${on} type-sub`} style={visible ? { transitionDelay: "150ms" } : undefined}>
           The essentials members rely on: family, support, and staying connected.
         </p>
 

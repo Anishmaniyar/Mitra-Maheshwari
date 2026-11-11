@@ -1,40 +1,12 @@
 import { pool } from '../../config/database.js';
+import { mapPaymentRow } from './payment.mapper.js';
+import type { PaymentDbRow, PaymentRow } from './payment.mapper.js';
 
-export interface PaymentRow {
-  id: string;
-  familyId: string;
-  initiatedByMemberId: string | null;
-  year: number;
-  amount: number;
-  currency: string;
-  status: string;
-  provider: string;
-  providerOrderId: string | null;
-  providerPaymentId: string | null;
-  receipt: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type { PaymentRow } from './payment.mapper.js';
 
 const PAYMENT_COLUMNS = `id, family_id, initiated_by_member_id, "year",
   amount, currency, status, provider, provider_order_id, provider_payment_id,
   receipt, created_at, updated_at`;
-
-const mapPaymentRow = (row: Record<string, never>): PaymentRow => ({
-  id: row.id as string,
-  familyId: row.family_id as string,
-  initiatedByMemberId: (row.initiated_by_member_id as string | null) ?? null,
-  year: row.year as number,
-  amount: Number(row.amount),
-  currency: row.currency as string,
-  status: row.status as string,
-  provider: row.provider as string,
-  providerOrderId: (row.provider_order_id as string | null) ?? null,
-  providerPaymentId: (row.provider_payment_id as string | null) ?? null,
-  receipt: row.receipt as string,
-  createdAt: row.created_at as Date,
-  updatedAt: row.updated_at as Date,
-});
 
 export const createPayment = async (input: {
   familyId: string;
@@ -44,7 +16,7 @@ export const createPayment = async (input: {
   currency: string;
   receipt: string;
 }): Promise<PaymentRow> => {
-  const result = await pool.query(
+  const result = await pool.query<PaymentDbRow>(
     `INSERT INTO payments
        (family_id, initiated_by_member_id, "year", amount, currency, receipt)
      VALUES ($1, $2, $3, $4, $5, $6)
@@ -66,7 +38,7 @@ export const findSuccessfulPaymentByFamilyAndYear = async (
   familyId: string,
   year: number,
 ): Promise<PaymentRow | null> => {
-  const result = await pool.query(
+  const result = await pool.query<PaymentDbRow>(
     `SELECT ${PAYMENT_COLUMNS} FROM payments
      WHERE family_id = $1 AND "year" = $2
        AND status IN ('AUTHORIZED', 'CAPTURED')
@@ -77,10 +49,28 @@ export const findSuccessfulPaymentByFamilyAndYear = async (
   return result.rows[0] ? mapPaymentRow(result.rows[0]) : null;
 };
 
+/** The single attempt that may still become a payment for this family/year.
+    A partial unique index guarantees at most one PENDING/ORDER_CREATED row. */
+export const findOpenPaymentByFamilyAndYear = async (
+  familyId: string,
+  year: number,
+): Promise<PaymentRow | null> => {
+  const result = await pool.query<PaymentDbRow>(
+    `SELECT ${PAYMENT_COLUMNS} FROM payments
+     WHERE family_id = $1 AND "year" = $2
+       AND status IN ('PENDING', 'ORDER_CREATED')
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [familyId, year],
+  );
+
+  return result.rows[0] ? mapPaymentRow(result.rows[0]) : null;
+};
+
 export const findPaymentByProviderOrderId = async (
   providerOrderId: string,
 ): Promise<PaymentRow | null> => {
-  const result = await pool.query(
+  const result = await pool.query<PaymentDbRow>(
     `SELECT ${PAYMENT_COLUMNS} FROM payments WHERE provider_order_id = $1`,
     [providerOrderId],
   );
@@ -92,7 +82,7 @@ export const updatePaymentProviderOrder = async (
   id: string,
   providerOrderId: string,
 ): Promise<PaymentRow> => {
-  const result = await pool.query(
+  const result = await pool.query<PaymentDbRow>(
     `UPDATE payments
      SET provider_order_id = $2, status = 'ORDER_CREATED', updated_at = now()
      WHERE id = $1
@@ -103,6 +93,20 @@ export const updatePaymentProviderOrder = async (
   return mapPaymentRow(result.rows[0]);
 };
 
+/** Releases an abandoned attempt so a fresh one can be created. Only open
+    attempts are touched: a provider-confirmed payment is never downgraded. */
+export const markPaymentFailed = async (id: string): Promise<PaymentRow | null> => {
+  const result = await pool.query<PaymentDbRow>(
+    `UPDATE payments
+     SET status = 'FAILED', updated_at = now()
+     WHERE id = $1 AND status IN ('PENDING', 'ORDER_CREATED')
+     RETURNING ${PAYMENT_COLUMNS}`,
+    [id],
+  );
+
+  return result.rows[0] ? mapPaymentRow(result.rows[0]) : null;
+};
+
 // Forward-only status transition with built-in idempotency guard:
 // PENDING/ORDER_CREATED → AUTHORIZED/CAPTURED/FAILED,
 // AUTHORIZED → CAPTURED, never leaves CAPTURED/REFUNDED.
@@ -111,7 +115,7 @@ export const transitionPaymentStatus = async (
   toStatus: 'AUTHORIZED' | 'CAPTURED' | 'FAILED',
   providerPaymentId?: string,
 ): Promise<PaymentRow | null> => {
-  const result = await pool.query(
+  const result = await pool.query<PaymentDbRow>(
     `UPDATE payments
      SET status = CASE
        WHEN status IN ('PENDING', 'ORDER_CREATED')
@@ -133,7 +137,7 @@ export const findLatestPaymentByFamilyAndYear = async (
   familyId: string,
   year: number,
 ): Promise<PaymentRow | null> => {
-  const result = await pool.query(
+  const result = await pool.query<PaymentDbRow>(
     `SELECT ${PAYMENT_COLUMNS} FROM payments
      WHERE family_id = $1 AND "year" = $2
      ORDER BY created_at DESC
@@ -147,7 +151,7 @@ export const findLatestPaymentByFamilyAndYear = async (
 export const findPaymentsByFamilyId = async (
   familyId: string,
 ): Promise<PaymentRow[]> => {
-  const result = await pool.query(
+  const result = await pool.query<PaymentDbRow>(
     `SELECT ${PAYMENT_COLUMNS} FROM payments
      WHERE family_id = $1
      ORDER BY created_at DESC`,
@@ -160,7 +164,7 @@ export const findPaymentsByFamilyId = async (
 export const findPaymentById = async (
   id: string,
 ): Promise<PaymentRow | null> => {
-  const result = await pool.query(
+  const result = await pool.query<PaymentDbRow>(
     `SELECT ${PAYMENT_COLUMNS} FROM payments WHERE id = $1`,
     [id],
   );

@@ -15,9 +15,8 @@ export function Footer() {
           <nav aria-label="Community">
             <h3>Community</h3>
             <ul>
-              <li><Link to="/about">About</Link></li>
-              <li><Link to="/community">Community</Link></li>
-              <li><Link to="/programs">Programs</Link></li>
+              <li><Link to="/#about">About</Link></li>
+              <li><Link to="/#community">Community</Link></li>
             </ul>
           </nav>
           <nav aria-label="Platform">
@@ -25,14 +24,14 @@ export function Footer() {
             <ul>
               <li><Link to="/login">Member Login</Link></li>
               <li><Link to="/register">Join the Community</Link></li>
-              <li><Link to="/programs">Membership</Link></li>
+              <li><Link to="/#join">Membership</Link></li>
               <li><Link to="/admin/login">Admin Login</Link></li>
             </ul>
           </nav>
           <nav aria-label="Support">
             <h3>Support</h3>
             <ul>
-              <li><Link to="/contact">Contact</Link></li>
+              <li><Link to="/#contact">Contact</Link></li>
               <li><span className="muted">Privacy</span></li>
               <li><span className="muted">Terms</span></li>
             </ul>

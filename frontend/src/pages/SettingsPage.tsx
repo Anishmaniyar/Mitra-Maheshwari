@@ -4,7 +4,6 @@ import { LoadingState } from "../components/common/LoadingState";
 import { PageContainer } from "../components/common/PageContainer";
 import { AppLayout } from "../components/layout/AppLayout";
 import { PageHeader } from "../components/layout/PageHeader";
-import { DEMO_MODE } from "../config/demo";
 import { useAuth } from "../hooks/useAuth";
 import { getHealth, type HealthStatus } from "../services/health.service";
 import { maskMobile } from "../utils/format";
@@ -54,10 +53,6 @@ export default function SettingsPage() {
                 <div>
                   <dt>Mobile</dt>
                   <dd>{user ? maskMobile(user.mobile) : "—"}</dd>
-                </div>
-                <div>
-                  <dt>Mode</dt>
-                  <dd>{DEMO_MODE ? "Demo (simulated data)" : "Real (backend data)"}</dd>
                 </div>
               </dl>
               <Button variant="secondary" onClick={logout}>

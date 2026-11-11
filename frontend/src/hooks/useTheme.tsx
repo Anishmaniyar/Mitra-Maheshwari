@@ -34,7 +34,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute("content", theme === "dark" ? "#11110F" : "#FAFAF8");
+      ?.setAttribute("content", theme === "dark" ? "#090909" : "#FAFAF8");
   }, [theme ]);
 
   const toggle = useCallback(() => {

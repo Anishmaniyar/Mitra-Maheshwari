@@ -1,4 +1,3 @@
-import { DEMO_MODE, demoAddFamilyMember, demoGetFamily } from "../../config/demo";
 import { api } from "../../services/api";
 import { maskMobile } from "../../utils/format";
 import type {
@@ -78,8 +77,10 @@ function toMember(row: BackendFamilyMember, familyId: string): Member {
 }
 
 function toMembership(block: BackendMembership): Membership {
+  // AUTHORIZED and CAPTURED both mean the fee is paid for the year (capture
+  // is a provider-side follow-up). Any open/failed attempt stays pending.
   const status =
-    block.status === "CAPTURED"
+    block.status === "CAPTURED" || block.status === "AUTHORIZED"
       ? "paid"
       : block.status === "FAILED"
         ? "failed"
@@ -106,7 +107,6 @@ export function toFamily(data: BackendFamily): Family {
 }
 
 export function getFamily(): Promise<{ family: Family }> {
-  if (DEMO_MODE) return demoGetFamily();
   return api<BackendFamily>("/family").then((data) => ({
     family: toFamily(data),
   }));
@@ -122,12 +122,6 @@ export interface InvitationResult {
  * means creating an invitation the person accepts via their own OTP flow.
  */
 export function addFamilyMember(input: NewMemberInput): Promise<InvitationResult> {
-  if (DEMO_MODE) {
-    return demoAddFamilyMember(input).then((res) => ({
-      family: res.family,
-      inviteLink: "",
-    }));
-  }
   const inviteeName = [input.firstName, input.middleName, input.lastName]
     .filter(Boolean)
     .join(" ");
