@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import { pool } from '../config/database.js';
 import {
   deleteOtpStateForMobile,
@@ -12,8 +11,7 @@ import { ensureTestRedis } from './redis-test.js';
 
 // Shared helpers for DB-backed flow tests. Every helper takes an explicit
 // mobile; tests own cleanup via cleanupMobile (pre-clean for crash leftovers,
-// post-clean in finally). Test mobiles live in the 9000001xxx range, clear
-// of the dev-admin identity (9000000001).
+// post-clean in finally).
 
 /**
  * Test mobiles are random per call (not sequential): node --test runs files
@@ -110,35 +108,15 @@ export const registrationInput = (mobile: string) => ({
 export const completeTestRegistration = (mobile: string) =>
   RegistrationService.completeRegistration(registrationInput(mobile));
 
-export const seedAdmin = async (mobile: string): Promise<string> => {
-  await cleanupMobile(mobile);
-  const familyCode = `TEST-ADMIN-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-  const family = await pool.query(
-    `INSERT INTO families (family_code, status) VALUES ($1, 'ACTIVE') RETURNING id`,
-    [familyCode],
-  );
-  const member = await pool.query(
-    `INSERT INTO members (family_id, first_name, last_name, mobile, is_head, status)
-     VALUES ($1, 'Test', 'Admin', $2, TRUE, 'APPROVED') RETURNING id`,
-    [family.rows[0].id, mobile],
-  );
-  await pool.query(
-    `INSERT INTO accounts (member_id, mobile, role) VALUES ($1, $2, 'ADMIN')`,
-    [member.rows[0].id, mobile],
-  );
-  return member.rows[0].id as string;
-};
-
-/** Registers a family head and approves them: returns usable head identity. */
+/** Registers a family head and approves them via the shared admin flow. */
 export const registerApprovedHead = async (
   mobile: string,
-  adminMemberId: string,
 ): Promise<{ memberId: string; familyId: string }> => {
   await cleanupMobile(mobile);
   await seedPendingOtp(mobile, 'REGISTRATION');
   await verifyTestOtp(mobile);
   const reg = await completeTestRegistration(mobile);
-  await AdminService.approveRegistration(reg.familyId, adminMemberId);
+  await AdminService.approveRegistration(reg.familyId);
   const profile = await AuthRepository.findAuthIdentityByMobile(mobile);
   if (!profile) throw new Error('setup failed: approved head not found');
   return { memberId: profile.memberId, familyId: profile.familyId };

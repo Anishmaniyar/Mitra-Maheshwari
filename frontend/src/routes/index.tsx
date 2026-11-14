@@ -1,8 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import type { ReactNode } from "react";
-import { AdminRoute, ProtectedRoute } from "../components/common/ProtectedRoute";
-import AdminDashboardPage from "../pages/AdminDashboardPage";
-import AdminLoginPage from "../pages/AdminLoginPage";
+import { ProtectedRoute } from "../components/common/ProtectedRoute";
+import AdminReviewPage from "../pages/AdminReviewPage";
 import BloodPage from "../pages/BloodPage";
 import DashboardPage from "../pages/DashboardPage";
 import DiscoverPage from "../pages/DiscoverPage";
@@ -38,8 +37,9 @@ export default function AppRoutes() {
       <Route path="/join" element={<VerifyMemberPage />} />
       <Route path="/register/details" element={<MemberDetailsPage />} />
       <Route path="/register/verify" element={<OtpVerificationPage />} />
-      <Route path="/admin/login" element={<AdminLoginPage />} />
-      <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
+      {/* Shared-link admin panel: the link fragment is exchanged for an
+          HttpOnly admin-session cookie. No member session is involved. */}
+      <Route path="/admin" element={<AdminReviewPage />} />
       <Route path="/invite/:token" element={<InvitePage />} />
 
       {/* Authenticated member portal */}

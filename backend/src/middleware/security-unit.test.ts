@@ -9,8 +9,8 @@ import {
 } from '../modules/auth/auth.controller.js';
 
 // Pure security configuration units: no database, Redis, or HTTP involved.
-// The env object is mutated and restored per test (same pattern as the
-// dev-admin guard tests); tests within this file run sequentially.
+// The env object is mutated and restored per test; tests within this file run
+// sequentially.
 const withNodeEnv = async (value: string, fn: () => Promise<void> | void): Promise<void> => {
   const previous = env.NODE_ENV;
   (env as { NODE_ENV: string }).NODE_ENV = value;

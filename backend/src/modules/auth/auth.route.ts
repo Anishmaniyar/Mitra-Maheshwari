@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { env } from '../../config/env.js';
 import { validateRequest } from '../../middleware/validate.middleware.js';
 import { authenticate } from '../../middleware/authenticate.js';
 import {
@@ -32,16 +31,6 @@ authRouter.post(
   validateRequest(AuthSchema.verifyOtpSchema),
   AuthController.verifyOtpController,
 );
-
-// Development-only shortcut: issues a real short-lived ADMIN session without
-// OTP. Defense in depth: the route is not mounted at all in production, and
-// the service additionally throws unless NODE_ENV is non-production, so the
-// endpoint cannot serve traffic even if the router wiring is bypassed.
-// Admin routes stay behind authenticate + authorize('ADMIN'); the issued JWT
-// passes that same middleware.
-if (env.NODE_ENV !== 'production') {
-  authRouter.post('/dev-admin-login', AuthController.devAdminLoginController);
-}
 
 authRouter.post('/refresh', refreshIpLimiter, AuthController.refreshController);
 

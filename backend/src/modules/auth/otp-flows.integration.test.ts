@@ -10,7 +10,6 @@ import {
   cleanupMobile,
   closeTestPool,
   completeTestRegistration,
-  seedAdmin,
   seedPendingOtp,
   testMobile,
   verifyTestOtp,
@@ -143,14 +142,12 @@ describe('login outcomes by account state', () => {
 
   it('9. approved account: session issued with a verifiable MEMBER JWT', async () => {
     const mobile = testMobile();
-    const adminMobile = testMobile();
     await cleanupMobile(mobile);
     try {
       await seedPendingOtp(mobile, 'REGISTRATION');
       await verifyTestOtp(mobile);
       const reg = await completeTestRegistration(mobile);
-      const adminId = await seedAdmin(adminMobile);
-      await AdminService.approveRegistration(reg.familyId, adminId);
+      await AdminService.approveRegistration(reg.familyId);
 
       await seedPendingOtp(mobile, 'LOGIN');
       const outcome = await verifyTestOtp(mobile);
@@ -162,19 +159,16 @@ describe('login outcomes by account state', () => {
       assert.equal(decoded.sub, (outcome.member as { id: string }).id);
     } finally {
       await cleanupMobile(mobile);
-      await cleanupMobile(adminMobile);
     }
   });
 
   it('10. rejected account: explicit contact-support outcome, no session', async () => {
     const mobile = testMobile();
-    const adminMobile = testMobile();
     await cleanupMobile(mobile);
     try {
       await seedPendingOtp(mobile, 'REGISTRATION');
       await verifyTestOtp(mobile);
       const reg = await completeTestRegistration(mobile);
-      const adminId = await seedAdmin(adminMobile);
       await AdminService.rejectRegistration(reg.familyId);
 
       await seedPendingOtp(mobile, 'LOGIN');
@@ -195,7 +189,6 @@ describe('login outcomes by account state', () => {
       assert.equal(kept.rows[0].family_status, 'REJECTED');
     } finally {
       await cleanupMobile(mobile);
-      await cleanupMobile(adminMobile);
     }
   });
 });

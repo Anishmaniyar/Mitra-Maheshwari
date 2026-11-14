@@ -1,11 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  membersQuerySchema,
+  adminSessionSchema,
   paginationQuerySchema,
-  updateFamilySchema,
-  updateMemberSchema,
-  updateMemberStatusSchema,
+  registrationIdParamsSchema,
 } from './admin.schema.js';
 
 describe('admin pagination schemas', () => {
@@ -17,32 +15,31 @@ describe('admin pagination schemas', () => {
       assert.equal(result.data.offset, 0);
     }
     assert.equal(
-      membersQuerySchema.safeParse({ limit: '10', status: 'PENDING' }).success,
+      paginationQuerySchema.safeParse({ limit: '10', offset: '5' }).success,
       true,
     );
-    assert.equal(
-      membersQuerySchema.safeParse({ status: 'BOGUS' }).success,
-      false,
-    );
+    assert.equal(paginationQuerySchema.safeParse({ limit: '0' }).success, false);
   });
 });
 
-describe('admin update schemas', () => {
-  it('accepts partial member updates and status changes', () => {
+describe('admin link schemas', () => {
+  it('requires a non-empty secret and rejects oversized input', () => {
+    assert.equal(adminSessionSchema.safeParse({ secret: 'abc' }).success, true);
+    assert.equal(adminSessionSchema.safeParse({ secret: '   ' }).success, false);
+    assert.equal(adminSessionSchema.safeParse({}).success, false);
     assert.equal(
-      updateMemberSchema.safeParse({ occupation: 'Trader', age: null }).success,
-      true,
-    );
-    assert.equal(updateMemberSchema.safeParse({}).success, true);
-    assert.equal(
-      updateMemberStatusSchema.safeParse({ status: 'APPROVED' }).success,
-      true,
-    );
-    assert.equal(
-      updateMemberStatusSchema.safeParse({ status: 'BOGUS' }).success,
+      adminSessionSchema.safeParse({ secret: 'x'.repeat(513) }).success,
       false,
     );
-    assert.equal(updateFamilySchema.safeParse({ status: 'ACTIVE' }).success, true);
-    assert.equal(updateFamilySchema.safeParse({}).success, false);
+  });
+
+  it('validates registration ids as UUIDs', () => {
+    assert.equal(
+      registrationIdParamsSchema.safeParse({
+        id: '00000000-0000-4000-8000-000000000000',
+      }).success,
+      true,
+    );
+    assert.equal(registrationIdParamsSchema.safeParse({ id: 'nope' }).success, false);
   });
 });

@@ -9,7 +9,7 @@ No business logic here — schema only.
 |---|---|
 | `family_status` | `PENDING` → `ACTIVE` / `REJECTED` |
 | `member_status` | `PENDING` → `APPROVED` / `REJECTED` |
-| `account_role` | `ADMIN`, `MEMBER` (system roles; Family Head is **not** a role) |
+| `account_role` | `ADMIN`, `MEMBER` (system roles; Family Head is **not** a role). Admin-panel access no longer uses this role — it uses the shared-link session instead. |
 | `invitation_status` | `PENDING`, `ACCEPTED`, `EXPIRED`, `CANCELLED` |
 
 ## Relationships

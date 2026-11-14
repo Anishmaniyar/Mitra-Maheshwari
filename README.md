@@ -21,9 +21,8 @@ CREATE DATABASE mitra_maheshwari;
 # 2. Backend (see backend/README.md for details)
 cd backend
 npm install
-cp .env.example .env        # set DATABASE_URL + JWT_SECRET (backend/.env is gitignored)
+cp .env.example .env        # set DATABASE_URL + JWT_SECRET + ADMIN_ACCESS_SECRET
 npm run db:migrate
-npm run admin:seed          # optional: create a local ADMIN account for /admin/login
 npm run dev                 # http://localhost:5000
 
 # 3. Frontend (new terminal)
@@ -64,9 +63,16 @@ Frontend (`frontend/.env.example`): `VITE_API_BASE_URL` (defaults to `/api` — 
 dev proxy forwards to the backend).
 
 Backend (`backend/.env.example`): `DATABASE_URL`, `PORT` (5000), `NODE_ENV`,
-`JWT_SECRET` (plus optional `OTP_HASH_SECRET` / `REFRESH_TOKEN_SECRET`), token
-lifetimes, `REDIS_URL`, `CORS_ALLOWED_ORIGINS`, Razorpay keys, and the `OTP_*` /
-`RL_*` policy vars. Production startup refuses weak or placeholder secrets.
+`JWT_SECRET` (plus optional `OTP_HASH_SECRET` / `REFRESH_TOKEN_SECRET`),
+`ADMIN_ACCESS_SECRET` / `ADMIN_SESSION_EXPIRES_IN` for the shared admin link,
+token lifetimes, `REDIS_URL`, `CORS_ALLOWED_ORIGINS`, Razorpay keys, and the
+`OTP_*` / `RL_*` policy vars. Production startup refuses weak or placeholder
+secrets.
+
+The admin panel opens from a private link: `<frontend-origin>/admin#<secret>`
+where `<secret>` equals `ADMIN_ACCESS_SECRET`. The fragment is exchanged for an
+HttpOnly admin cookie and stripped from the URL. Rotate the secret to revoke all
+admin sessions. No admin account or password exists.
 
 **Credentials are never committed.** `docker-compose.yml` requires
 `POSTGRES_PASSWORD` from your environment (repo-root `.env`, gitignored) or the
@@ -96,8 +102,12 @@ committed, rotate it: `ALTER USER postgres WITH PASSWORD '<new>';`.
 | POST | `/api/payments/order` | JWT (head) | Create/reuse the current-year order |
 | POST | `/api/payments/verify` | JWT | Verify Razorpay signature |
 | POST | `/api/payments/webhook/razorpay` | HMAC | Gateway outcome (raw-body verified) |
-| GET | `/api/admin/registrations` | ADMIN | Pending queue (paginated) |
-| POST | `/api/admin/registrations/:id/approve` \| `/reject` | ADMIN | Registration decisions |
+| POST | `/api/admin/session` | link secret | Exchange the shared admin link for a session cookie |
+| GET | `/api/admin/session` | admin cookie | Validate the current admin session |
+| POST | `/api/admin/session/logout` | admin cookie | Clear the admin session |
+| GET | `/api/admin/registrations` | admin cookie | Pending queue (paginated) |
+| GET | `/api/admin/registrations/:id` | admin cookie | Pending registration detail |
+| POST | `/api/admin/registrations/:id/approve` \| `/reject` | admin cookie + CSRF header | Registration decisions |
 
 ## Logo
 

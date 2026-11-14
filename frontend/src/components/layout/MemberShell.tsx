@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import { useTheme } from "../../hooks/useTheme";
 import { Logo } from "../common/Logo";
 import { LpIcon, LP_PATHS } from "../common/LpIcon";
 
@@ -84,7 +83,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 
 export function MemberShell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const { theme, toggle } = useTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -120,17 +118,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
         <Link to="/notifications" className="icon-btn" aria-label="Notifications">
           <LpIcon d={LP_PATHS.bell} />
         </Link>
-        <button
-          type="button"
-          className="icon-btn"
-          onClick={toggle}
-          aria-pressed={theme === "dark"}
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          <span key={theme} className="theme-icon">
-            <LpIcon d={theme === "dark" ? LP_PATHS.sun : LP_PATHS.moon} />
-          </span>
-        </button>
         {user && (
           <Link to="/profile" className="site-header__user-chip" aria-label="Your profile">
             <span className="avatar" aria-hidden="true">
@@ -169,17 +156,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
             <Link to="/notifications" className="icon-btn" aria-label="Notifications">
               <LpIcon d={LP_PATHS.bell} />
             </Link>
-            <button
-              type="button"
-              className="icon-btn"
-              onClick={toggle}
-              aria-pressed={theme === "dark"}
-              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              <span key={theme} className="theme-icon">
-                <LpIcon d={theme === "dark" ? LP_PATHS.sun : LP_PATHS.moon} />
-              </span>
-            </button>
             {user && (
               <Link to="/profile" className="site-header__user-chip" aria-label="Your profile">
                 <span className="avatar" aria-hidden="true">

@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Logo } from "../common/Logo";
-import { LpIcon, LP_PATHS } from "../common/LpIcon";
-import { useTheme } from "../../hooks/useTheme";
 
 interface HeaderProps {
   variant: "public" | "app";
 }
 
 const PUBLIC_LINKS = [
-  { hash: "#about", label: "About" },
+  { hash: "#home", label: "Home" },
+  { hash: "#about", label: "About Us" },
+  { hash: "#initiatives", label: "Our Initiatives" },
   { hash: "#community", label: "Community" },
   { hash: "#contact", label: "Contact" },
 ] as const;
@@ -17,7 +17,6 @@ const PUBLIC_LINKS = [
 export function Header({ variant }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { theme, toggle } = useTheme();
   const location = useLocation();
 
   // Transparent -> blur/border once past 40px. Passive listener, cheap toggle.
@@ -51,7 +50,10 @@ export function Header({ variant }: HeaderProps) {
   // Authenticated pages use MemberShell (sidebar) instead of this header.
   if (variant === "app") return null;
 
-  const isActive = (hash: string) => location.hash === hash;
+  const isActive = (hash: string) =>
+    hash === "#home"
+      ? location.pathname === "/" && (!location.hash || location.hash === "#home")
+      : location.hash === hash;
 
   // Clicking the current section again should still scroll it into view.
   const onNavClick = (hash: string) => {
@@ -81,17 +83,6 @@ export function Header({ variant }: HeaderProps) {
           ))}
         </nav>
         <div className="site-nav__actions">
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={toggle}
-            aria-pressed={theme === "dark"}
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            <span key={theme} className="theme-icon">
-              <LpIcon d={theme === "dark" ? LP_PATHS.sun : LP_PATHS.moon} />
-            </span>
-          </button>
           <Link to="/login" className="btn btn--ghost btn--sm hide-sm">
             Member Login
           </Link>
@@ -127,14 +118,6 @@ export function Header({ variant }: HeaderProps) {
         <Link to="/login" className="btn btn--secondary" onClick={() => setMenuOpen(false)}>
           Member Login
         </Link>
-        <button
-          type="button"
-          className="btn btn--ghost"
-          onClick={toggle}
-          aria-pressed={theme === "dark"}
-        >
-          {theme === "dark" ? "Light mode" : "Dark mode"}
-        </button>
         <Link to="/register" className="btn btn--primary" onClick={() => setMenuOpen(false)}>
           Join the Community
         </Link>

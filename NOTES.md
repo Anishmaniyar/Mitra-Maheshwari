@@ -25,7 +25,7 @@
 |---|---|
 | `families` | A family unit: `family_code` (MM-YYYY-XXXXXX), status (`PENDING`/`ACTIVE`/`REJECTED`), `created_by_member_id`, `approved_by_member_id` |
 | `members` | Person in a family: name, mobile, blood group, age, occupation, area, PAN, `is_head`, status |
-| `accounts` | Login identity per member: `mobile`, `role` (`MEMBER`/`ADMIN`), `last_login_at` |
+| `accounts` | Login identity per member: `mobile`, `role` (`MEMBER`/`ADMIN`, legacy — admin-panel access is shared-link based), `last_login_at` |
 | `refresh_tokens` | Hashed refresh tokens with rotation + revocation chain |
 | `registration_sessions` | In-progress registration state (created by migrations) |
 | `family_invitations` | Invite a person to join a family: `invitee_name`, `invitee_mobile`, `token`, status, expiry |
@@ -54,7 +54,7 @@ Indexes worth knowing:
 
 - **Family** = household. Status drives access: `PENDING` (awaiting admin approval), `ACTIVE` (members can log in), `REJECTED`.
 - **Member** = person. Head of family has `is_head = true`. Member status tracks its own approval (`PENDING`/`APPROVED`/`REJECTED`).
-- **Account** = login identity keyed by mobile. Role `MEMBER` or `ADMIN`. No passwords — OTP proves control of mobile.
+- **Account** = login identity keyed by mobile. Role `MEMBER` or `ADMIN` (legacy — the admin panel is shared-link based). No passwords — OTP proves control of mobile.
 - **Invitation** = link between a family and a new member. Accepted through the invitee's own OTP verification.
 - **Payment** = annual family membership fee (one per family per year).
 - **Registration proof** = short-lived Redis token issued after OTP verification, consumed exactly once by `/registration/complete` or `/family/invitations/:token/accept`.
@@ -129,19 +129,25 @@ Outcome rules (from `verifyOtp`):
 
 ## 8. Verification (admin approval) flow
 
-A registration is `PENDING` until an admin acts.
+A registration is `PENDING` until someone with the private admin link acts.
 
-1. Admin logs in at `/admin/login`:
-   - Production: OTP-based (mobile must have an `ADMIN` account).
-   - Development: `POST /api/auth/dev-admin-login` issues a real short-lived ADMIN JWT (route not mounted in production).
-2. **`/admin` (AdminDashboardPage)** — paginated queue (20/page, prev/next, total). Each row: family code, head name, mobile, created date.
-3. Click a row → detail view: full family + all members (names, mobile, blood group, age, occupation, area, PAN).
-4. Actions:
-   - **Approve** → `POST /api/admin/registrations/:id/approve`: family + head member → `APPROVED`/`ACTIVE`, `approved_at` set, `approved_by_member_id` recorded.
+1. Open the shared link `<frontend-origin>/admin#<ADMIN_ACCESS_SECRET>`. The
+   frontend reads the fragment, immediately removes it from the address bar, and
+   exchanges the secret via `POST /api/admin/session` (body, never query string).
+2. The backend validates `ADMIN_ACCESS_SECRET`, sets an HttpOnly,
+   `SameSite=Strict`, admin-API-scoped cookie signed with a key derived from
+   that secret, and returns the current pending queue. Rotating the secret
+   invalidates all admin sessions; there are no admin accounts or passwords.
+3. **`/admin` (AdminReviewPage)** — paginated queue (20/page, prev/next, total).
+   Each row: family code, head name, mobile, created date.
+4. Click a row → detail view: full family + all members (names, mobile, blood group, age, occupation, area, PAN).
+5. Actions require the `X-Admin-CSRF: 1` header:
+   - **Approve** → `POST /api/admin/registrations/:id/approve`: family + head member → `APPROVED`/`ACTIVE`, `approved_at` set, `approved_by_member_id` NULL.
    - **Reject** → `POST /api/admin/registrations/:id/reject`: family + member → `REJECTED`.
-5. After approval the member can log in (OTP → `LOGGED_IN`).
+6. After approval the member can log in (OTP → `LOGGED_IN`).
 
-`/api/admin/registrations` is `ADMIN`-role gated via `authenticate` + `authorize('ADMIN')`.
+Admin APIs are gated by `authenticateAdmin` (admin cookie + CSRF), completely
+separate from member JWTs and from `authorize('ADMIN')`.
 
 ---
 
@@ -232,9 +238,8 @@ docker compose --profile db up -d        # Postgres on :5433 + Redis on :6379
 # Backend
 cd backend
 npm install
-cp .env.example .env                    # set DATABASE_URL, JWT_SECRET
+cp .env.example .env                    # set DATABASE_URL, JWT_SECRET, ADMIN_ACCESS_SECRET
 npm run db:migrate                      # apply migrations
-npm run admin:seed                      # optional: create local ADMIN account
 npm run dev                             # http://localhost:5000
 
 # Frontend

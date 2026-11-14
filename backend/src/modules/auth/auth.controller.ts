@@ -3,7 +3,6 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import { env } from '../../config/env.js';
 import { AppError } from '../../shared/errors/appError.js';
 import * as AuthService from './auth.service.js';
-import * as DevAdminService from './devAdmin.service.js';
 
 export const REFRESH_COOKIE_NAME = 'refreshToken';
 
@@ -115,27 +114,6 @@ export const logoutController = asyncHandler(
       message: 'Logged out successfully',
       status: 'success',
       data: null,
-    });
-  },
-);
-
-export const devAdminLoginController = asyncHandler(
-  async (_req: Request, res: Response) => {
-    const result = await DevAdminService.devAdminLogin();
-
-    res.cookie(
-      REFRESH_COOKIE_NAME,
-      result.refreshToken,
-      refreshCookieOptions(AuthService.getRefreshCookieMaxAgeMs()),
-    );
-
-    return res.status(200).json({
-      message: 'Logged in successfully',
-      status: 'success',
-      data: {
-        accessToken: result.accessToken,
-        member: result.member,
-      },
     });
   },
 );

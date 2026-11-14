@@ -9,8 +9,8 @@ dotenv.config();
 
 const envSchema = z.object({
   // Required with NO default: a deployed application must never silently
-  // fall back to development mode (dev admin login, OTP console logging,
-  // insecure cookies, and verbose errors all key off this).
+  // fall back to development mode (OTP console logging, insecure cookies,
+  // and verbose errors all key off this).
   NODE_ENV: z.enum(['development', 'test', 'production']),
   PORT: z
     .string()
@@ -27,6 +27,11 @@ const envSchema = z.object({
   REFRESH_TOKEN_SECRET: z.string().min(1).optional(),
   ACCESS_TOKEN_EXPIRES_IN: z.string().default('15m'),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('30d'),
+  // Shared-link admin access. The link's fragment is exchanged for a separate
+  // HttpOnly admin session; empty disables the admin panel everywhere except
+  // production, where a strong value is mandatory (see validateProductionConfig).
+  ADMIN_ACCESS_SECRET: z.string().default(''),
+  ADMIN_SESSION_EXPIRES_IN: z.string().default('12h'),
   MEMBERSHIP_ANNUAL_FEE_AMOUNT: z.string().default('1100'),
   MEMBERSHIP_CURRENCY: z.string().default('INR'),
   RAZORPAY_KEY_ID: z.string().default(''),
@@ -65,6 +70,8 @@ const envSchema = z.object({
   OTP_PROOF_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   // Distributed rate limits (max requests per windowMs window). Each pair is
   // independently configurable; see middleware/rateLimit.ts for keying.
+  RL_ADMIN_SESSION_IP_MAX: z.coerce.number().int().positive().default(10),
+  RL_ADMIN_SESSION_IP_WINDOW_MS: z.coerce.number().int().positive().default(900000),
   RL_OTP_REQUEST_IP_MAX: z.coerce.number().int().positive().default(30),
   RL_OTP_REQUEST_IP_WINDOW_MS: z.coerce.number().int().positive().default(900000),
   RL_OTP_REQUEST_MOBILE_MAX: z.coerce.number().int().positive().default(5),
@@ -136,6 +143,7 @@ export const validateProductionConfig = (
   if (parsed.REFRESH_TOKEN_SECRET !== undefined) {
     assertStrongSecret('REFRESH_TOKEN_SECRET', parsed.REFRESH_TOKEN_SECRET);
   }
+  assertStrongSecret('ADMIN_ACCESS_SECRET', parsed.ADMIN_ACCESS_SECRET);
   const origins = parseAllowedOrigins(parsed.CORS_ALLOWED_ORIGINS);
   if (origins.length === 0) {
     throw new Error(
@@ -146,6 +154,7 @@ export const validateProductionConfig = (
   for (const [name, value] of [
     ['ACCESS_TOKEN_EXPIRES_IN', parsed.ACCESS_TOKEN_EXPIRES_IN],
     ['REFRESH_TOKEN_EXPIRES_IN', parsed.REFRESH_TOKEN_EXPIRES_IN],
+    ['ADMIN_SESSION_EXPIRES_IN', parsed.ADMIN_SESSION_EXPIRES_IN],
   ] as const) {
     if (!DURATION_RE.test(value.trim())) {
       throw new Error(`${name} must look like 15m, 30d, or 5000ms`);

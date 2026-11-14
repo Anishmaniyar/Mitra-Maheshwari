@@ -13,6 +13,7 @@ const baseProd = (): Record<string, string | undefined> => ({
   PORT: '5000',
   DATABASE_URL: 'postgres://app:secret@db.internal:5432/mitra',
   JWT_SECRET: STRONG,
+  ADMIN_ACCESS_SECRET: STRONG,
   CORS_ALLOWED_ORIGINS: 'https://app.example.com',
   RAZORPAY_KEY_ID: 'rzp_live_abc',
   RAZORPAY_KEY_SECRET: 'rzp-secret-value-ok',
@@ -45,6 +46,18 @@ describe('production startup gate', () => {
 
   it('rejects short non-placeholder secrets', () => {
     assert.throws(() => loadEnv({ ...baseProd(), JWT_SECRET: 'short-but-unique-1' }), /JWT_SECRET/);
+  });
+
+  it('requires a strong admin access secret in production', () => {
+    assert.throws(
+      () => loadEnv({ ...baseProd(), ADMIN_ACCESS_SECRET: '' }),
+      /ADMIN_ACCESS_SECRET/,
+    );
+    assert.throws(
+      () => loadEnv({ ...baseProd(), ADMIN_ACCESS_SECRET: 'change-me' }),
+      /ADMIN_ACCESS_SECRET/,
+    );
+    assert.doesNotThrow(() => loadEnv(baseProd()));
   });
 
   it('validates dedicated secrets when they are set, ignores them when absent', () => {

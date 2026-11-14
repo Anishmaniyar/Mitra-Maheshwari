@@ -23,7 +23,6 @@ import {
   completeTestRegistration,
   registerApprovedHead,
   registrationInput,
-  seedAdmin,
   seedPendingOtp,
   testMobile,
   verifyTestOtp,
@@ -184,13 +183,10 @@ describe('redis OTP challenge lifecycle', () => {
 
 describe('purpose-bound session issuance', () => {
   it('approved account: LOGIN challenge logs in, REGISTRATION challenge does not', async () => {
-    const adminMobile = testMobile();
     const headMobile = testMobile();
-    await cleanupMobile(adminMobile);
     await cleanupMobile(headMobile);
     try {
-      const adminId = await seedAdmin(adminMobile);
-      await registerApprovedHead(headMobile, adminId);
+      await registerApprovedHead(headMobile);
 
       await seedPendingOtp(headMobile, 'REGISTRATION');
       const crossPurpose = await verifyTestOtp(headMobile);
@@ -204,7 +200,6 @@ describe('purpose-bound session issuance', () => {
       assert.ok(login.accessToken);
     } finally {
       await cleanupMobile(headMobile);
-      await cleanupMobile(adminMobile);
     }
   });
 

@@ -70,6 +70,8 @@ interface BackendError {
 interface RequestOptions {
   method?: string;
   body?: unknown;
+  /** Extra request headers (e.g. the admin CSRF header). */
+  headers?: Record<string, string>;
   /** Set false for public endpoints so a stale token is not attached. */
   auth?: boolean;
   /** Set false to skip the access-token refresh retry (used by the refresh call itself). */
@@ -96,7 +98,7 @@ function errorCode(status: number, message: string): string {
 }
 
 async function rawRequest<T>(path: string, options: RequestOptions): Promise<T> {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...(options.headers ?? {}) };
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
 
   if (options.auth !== false && accessToken) headers["Authorization"] = `Bearer ${accessToken}`;

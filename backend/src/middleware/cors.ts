@@ -62,7 +62,7 @@ export const buildCorsMiddleware = (allowedOrigins: string[]) =>
     },
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-CSRF'],
     // Cache preflights for 10 minutes to avoid an OPTIONS round trip per call.
     maxAge: 600,
   });

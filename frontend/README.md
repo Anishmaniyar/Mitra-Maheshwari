@@ -10,6 +10,10 @@ React + TypeScript + Vite + React Router PWA with a centralized CSS design syste
 - **Pages:** `/` landing, `/register` verify member, `/register/details` review &
   correct record, `/register/verify` OTP, then `/dashboard`, `/family`, `/payments`
   (protected).
+- **Admin:** `/admin#<secret>` is a standalone shared-link review screen for
+  pending registrations. It uses an HttpOnly admin cookie, not member auth, and
+  keeps no admin credentials in storage. Replace `ADMIN_ACCESS_SECRET` on the
+  backend to revoke access.
 - **Data flow:** pages → feature services (`src/features/*/*.service.ts`) → central
   client (`src/services/api.ts`). No fetch calls inside components.
 

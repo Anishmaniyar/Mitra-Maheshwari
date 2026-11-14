@@ -92,27 +92,6 @@ export function verifyOtp(input: {
   }));
 }
 
-/**
- * Development-only admin shortcut (local `vite dev` only — stripped from
- * production builds). Calls the backend dev endpoint, which issues a real
- * short-lived ADMIN JWT; no token is hardcoded in the frontend.
- */
-export function devAdminLogin(): Promise<VerifyOtpResponse> {
-  if (!import.meta.env.DEV) {
-    return Promise.reject(new Error("Development login is not available."));
-  }
-  return api<{ accessToken: string; member: BackendMemberProfile }>(
-    "/auth/dev-admin-login",
-    { method: "POST", auth: false },
-  ).then((data) => ({
-    verified: true as const,
-    accountStatus: "APPROVED" as const,
-    nextAction: "LOGGED_IN" as const,
-    token: data.accessToken,
-    member: toMember(data.member),
-  }));
-}
-
 export function getMe(): Promise<{ member: Member }> {
   return api<BackendMemberProfile>("/auth/me").then((member) => ({
     member: toMember(member),

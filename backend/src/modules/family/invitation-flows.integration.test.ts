@@ -7,7 +7,6 @@ import {
   cleanupMobile,
   closeTestPool,
   registerApprovedHead,
-  seedAdmin,
   seedPendingOtp,
   testMobile,
   verifyTestOtp,
@@ -17,25 +16,20 @@ import { closeTestRedis } from '../../test-utils/redis-test.js';
 // Invitation acceptance (cases 14b, 16–18). One approved head household is
 // shared; invitee mobiles are cleaned per test.
 
-let adminId = '';
 let headMemberId = '';
 let headFamilyId = '';
 
 before(async () => {
-  const adminMobile = testMobile();
   const headMobile = testMobile();
   (globalThis as { __headMobile?: string }).__headMobile = headMobile;
-  (globalThis as { __adminMobile?: string }).__adminMobile = adminMobile;
-  adminId = await seedAdmin(adminMobile);
-  const head = await registerApprovedHead(headMobile, adminId);
+  const head = await registerApprovedHead(headMobile);
   headMemberId = head.memberId;
   headFamilyId = head.familyId;
 });
 
 after(async () => {
-  const g = globalThis as { __headMobile?: string; __adminMobile?: string };
+  const g = globalThis as { __headMobile?: string };
   if (g.__headMobile) await cleanupMobile(g.__headMobile);
-  if (g.__adminMobile) await cleanupMobile(g.__adminMobile);
   await closeTestRedis();
   await closeTestPool();
 });

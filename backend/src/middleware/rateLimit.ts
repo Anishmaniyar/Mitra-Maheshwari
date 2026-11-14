@@ -198,6 +198,12 @@ const buildUserLimiter = (prefix: string, spec: LimiterSpec) =>
 // registration/login, strict enough to blunt enumeration and SMS-cost abuse.
 // OTP request/verify additionally enforce store-level cooldowns, per-mobile
 // resend caps, and per-challenge attempt limits.
+export const adminSessionIpLimiter = buildIpLimiter('admin-session-ip', {
+  windowMs: env.RL_ADMIN_SESSION_IP_WINDOW_MS,
+  limit: env.RL_ADMIN_SESSION_IP_MAX,
+  identifier: 'admin-session-ip',
+});
+
 export const otpRequestIpLimiter = buildIpLimiter('otp-req-ip', {
   windowMs: env.RL_OTP_REQUEST_IP_WINDOW_MS,
   limit: env.RL_OTP_REQUEST_IP_MAX,

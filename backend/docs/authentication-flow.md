@@ -136,8 +136,46 @@ Missing/invalid/expired token → `AppError(..., 401)`.
 
 - Role gate only: `authorize('ADMIN')` / `authorize('MEMBER')` checks
   `req.user.role`. Wrong role → `AppError(..., 403)`.
+- Admin-panel routes do **not** use this path: they use `authenticateAdmin`
+  (shared-link admin cookie) instead. Member JWTs are never accepted there.
 - **Family ownership checks live in the service layer**, not in middleware.
   Example rule: a Family Head may manage members only if
   `requester.isFamilyHead === true AND targetMember.familyId === requester.familyId`.
 - Middleware order on routes: `authenticate → authorize → validateRequest → controller`
   (public routes: `validateRequest → controller`).
+
+## 8. Shared-link admin flow (separate from member auth)
+
+The admin panel has no accounts, passwords, or OTP login. Access is possession
+of a private link.
+
+```
+Open /admin#<secret>
+  → frontend reads location.hash, immediately history.replaceState() to strip it
+  → POST /api/admin/session { secret }        (body only, never a query string)
+      → timing-safe compare with ADMIN_ACCESS_SECRET
+      → sign HS256 admin JWT: { typ: 'admin' }, lifetime
+        ADMIN_SESSION_EXPIRES_IN (default 12h), key derived from the secret
+      → Set-Cookie mm_admin_session: HttpOnly; Secure (prod); SameSite=Strict;
+        Path=/api/admin
+      → 200 { authenticated: true }
+  → all admin API calls include the cookie; state changes also send
+    X-Admin-CSRF: 1
+  → GET /api/admin/session revalidates on page load
+  → POST /api/admin/session/logout clears the cookie
+```
+
+Properties:
+
+- Admin and member sessions are disjoint: the admin middleware never reads
+  `Authorization`, and member routes never accept the admin cookie.
+- No session is stored server-side. Rotating `ADMIN_ACCESS_SECRET` invalidates
+  every admin session immediately (the signing key changes).
+- If `ADMIN_ACCESS_SECRET` is unset, the exchange returns 503 outside production
+  and production startup refuses to boot.
+- The exchange is per-IP rate-limited through Redis
+  (`RL_ADMIN_SESSION_IP_MAX` / `RL_ADMIN_SESSION_IP_WINDOW_MS`, default 10 per
+  15 minutes).
+- Admin scope is registration review only: list/details plus approve/reject.
+  Approvals are recorded with `approved_at` and `approved_by_member_id = NULL`
+  because there is no identifiable admin member.
